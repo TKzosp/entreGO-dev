@@ -1,3 +1,24 @@
+# To do
+
+-   Front
+    -   Paginas principais
+        -   pagina de historico
+            -   Entregas realizadas
+        -   pagina de motoristas
+        -   pagina de usuarios
+        -   pagina principal (dashboard maybe?)
+    -   Funções
+        -   Nova entrega
+        -   Pagina de rastreio
+        -   Pagina de cadastro de um entrega
+-   Back
+    -   integração com a API de rastreio
+    -   API banco de dados entregas
+    -   Banco de dados entregas
+        -   diagramação do banco
+            -   definição de tabelas e colunas
+        -   definição de qual banco utilizar (Postgrees? mysql? mongoDB?)
+
 # Como rodar o projeto
 
 ### Pré-requisitos
