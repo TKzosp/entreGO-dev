@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
-use App\Models\User;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -11,6 +10,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules;
 use Illuminate\View\View;
+use App\Models\Usuario;
 
 class RegisteredUserController extends Controller
 {
@@ -40,7 +40,7 @@ class RegisteredUserController extends Controller
             'birthdate' => 'required|date',
         ]);
 
-        $user = User::create([
+        $user = Usuario::create([
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
@@ -50,6 +50,12 @@ class RegisteredUserController extends Controller
             'status' => $request->status ?? 'pendente',
             'birthdate' => $request->birthdate,
         ]);
+        $usuario = Usuario::create([
+        'nome' => $request->nome,
+        'email' => $request->email,
+        'senha' => Hash::make($request->senha),
+        'tipo' => 'cliente',
+    ]);
 
         event(new Registered($user));
 
