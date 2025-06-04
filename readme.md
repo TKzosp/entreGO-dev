@@ -1,3 +1,37 @@
+# Como rodar o projeto
+
+### Pré-requisitos
+
+-   PHP
+-   Laravel
+-   NodeJS
+-   NPM
+-   MySQL
+
+---
+
+### Após Garantir que os programas acima estão instalados em sua maquina rode os seguintes comando.
+
+-   Git clone https://github.com/TKzosp/entreGO-dev
+-   composer update
+-   npm install
+-   npm run build
+-   php artisan key:generate
+-   php artisan migrate --force
+-   php artisan serve
+
+---
+
+### Links Uteis
+
+Para instalar os pré-requisitos: https://laravel.com/docs/12.x/installation#installing-php
+
+### Rotas que estão criadas:
+
+-   /login - Tela de Login
+-   /Register - tela de registro de novo usuario
+-   / - Tela principal com as consultas
+
 # To do
 
 -   Front
@@ -19,35 +53,12 @@
             -   definição de tabelas e colunas
         -   definição de qual banco utilizar (Postgrees? mysql? mongoDB?)
 
-# Como rodar o projeto
+# Membros do grupo
 
-### Pré-requisitos
-
--   PHP
--   Laravel
--   NodeJS
--   NPM
-
----
-
-### Após Garantir que os programas acima estão instalados em sua maquina rode os seguintes comando.
-
--   Git clone https://github.com/TKzosp/entreGO-dev
--   composer update
--   npm install
--   npm run build
--   php artisan key:generate
--   php artisan migrate
--   php artisan serve
-
----
-
-### Links Uteis
-
-Para instalar os pré-requisitos: https://laravel.com/docs/12.x/installation#installing-php
-
-### Rotas que estão criadas:
-
--   /login - Tela de Login
--   /Register - tela de registro de novo usuario
--   / - Tela principal com as consultas
+Antonio Pedro 815711-9\
+Gustavo Henrik 815955-9\
+Igor Garcia 815779-1\
+Rafael Cena 816013-5\
+Ryan Serato Costa 812321-8\
+Thales Tukaze 816085-2\
+Thomas Cassiano 811999-8
