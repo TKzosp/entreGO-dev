@@ -2,12 +2,12 @@
 <nav class="bg-white shadow-md fixed w-full top-0 z-50">
     <div class="container mx-auto px-6 py-3">
         <div class="flex items-center justify-between">
-            <a class="text-2xl font-bold text-entrego-blue" href="{{ route('dashboard') }}">entreGO</a>
+            <a class="text-2xl font-bold text-entrego-blue" href="<?php echo e(route('dashboard')); ?>">entreGO</a>
 
             <div class="hidden md:flex items-center space-x-1">
-                <a class="py-2 px-3 text-gray-700 hover:text-primary rounded-md" href="{{ route('dashboard') }}">Dashboard</a>
-                <a class="py-2 px-3 text-gray-700 hover:text-primary rounded-md" href="{{ route('tracking') }}">Tracking</a>
-                <a class="py-2 px-3 text-gray-700 hover:text-primary rounded-md" href="{{ route('registration') }}">Driver & Vehicle Registration</a>
+                <a class="py-2 px-3 text-gray-700 hover:text-primary rounded-md" href="<?php echo e(route('dashboard')); ?>">Dashboard</a>
+                <a class="py-2 px-3 text-gray-700 hover:text-primary rounded-md" href="<?php echo e(route('tracking')); ?>">Tracking</a>
+                <a class="py-2 px-3 text-gray-700 hover:text-primary rounded-md" href="<?php echo e(route('registration')); ?>">Driver & Vehicle Registration</a>
             </div>
 
 <div class="flex items-center space-x-4">
@@ -27,9 +27,9 @@
 
         <!-- Dropdown -->
         <div x-show="open" @click.away="open = false" class="absolute right-0 mt-2 w-36 bg-white rounded-md shadow-lg z-10 group-hover:block">
-            <a href="{{ route('profile') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Profile</a>
-            <form method="POST" action="{{ route('logout') }}">
-                @csrf
+            <a href="<?php echo e(route('profile')); ?>" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Profile</a>
+            <form method="POST" action="<?php echo e(route('logout')); ?>">
+                <?php echo csrf_field(); ?>
                 <button type="submit" class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                     Logout
                 </button>
@@ -39,11 +39,12 @@
 </div>
 
         <div class="hidden mobile-menu md:hidden">
-            <a class="block py-2 px-4 text-sm text-gray-700 hover:bg-gray-200" href="{{ route('dashboard') }}">Dashboard</a>
-            <a class="block py-2 px-4 text-sm text-gray-700 hover:bg-gray-200" href="{{ route('tracking') }}">Tracking</a>
-            <a class="block py-2 px-4 text-sm text-gray-700 hover:bg-gray-200" href="{{ route('registration') }}">Driver & Vehicle Registration</a>
+            <a class="block py-2 px-4 text-sm text-gray-700 hover:bg-gray-200" href="<?php echo e(route('dashboard')); ?>">Dashboard</a>
+            <a class="block py-2 px-4 text-sm text-gray-700 hover:bg-gray-200" href="<?php echo e(route('tracking')); ?>">Tracking</a>
+            <a class="block py-2 px-4 text-sm text-gray-700 hover:bg-gray-200" href="<?php echo e(route('registration')); ?>">Driver & Vehicle Registration</a>
         </div>
     </div>
 </nav>
 
 
+<?php /**PATH C:\Users\rafae\Documents\entreGO-dev\resources\views/layouts/navigation.blade.php ENDPATH**/ ?>
