@@ -31,10 +31,10 @@ class RegisteredUserController extends Controller
         'ativo' => true,
     ]);
 
-    dd($usuario); // Ver se foi criado
+// // Login automático (opcional, remova se quiser que o usuário vá manualmente para o login)
+// Auth::login($usuario);
 
-    Auth::login($usuario);
-
-    return redirect('/teste');
+return redirect('/login')->with('success', 'Cadastro realizado com sucesso! Faça o login.');
+// dd($usuario);
     }
 }

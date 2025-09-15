@@ -22,11 +22,13 @@ Route::middleware(['auth'])->group(function () {
 Route::get('/dashboard', [DashboardController::class, 'index'])->middleware(['auth'])->name('dashboard');
 Route::get('/profile/edit', [ProfileController::class, 'edit'])->name('profile.edit');
 Route::get('/profile', [ProfileController::class, 'edit'])->name('profile');
+Route::view('/demo', 'demo');
 
 Route::middleware(['auth'])->group(function () {
-    Route::get('/dashboard', fn() => view('dashboard'))->name('dashboard');
+    Route::get('/', fn() => view('dashboard'))->name('dashboard');
     Route::get('/tracking', fn() => view('tracking'))->name('tracking');
     Route::get('/registration', fn() => view('registration'))->name('registration');
+    Route::get('/profile', fn() => view('profile'))->name('profile');
 });
 
 require __DIR__.'/auth.php';

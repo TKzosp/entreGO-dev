@@ -8,6 +8,12 @@
 <?php $attributes = $attributes->except(\App\View\Components\GuestLayout::ignoredParameterNames()); ?>
 <?php endif; ?>
 <?php $component->withAttributes([]); ?>
+    <?php if(session('success')): ?>
+    <div class="bg-green-100 text-green-800 p-4 rounded mb-4">
+        <?php echo e(session('success')); ?>
+
+    </div>
+<?php endif; ?>
     <!-- Session Status -->
     <?php if (isset($component)) { $__componentOriginal7c1bf3a9346f208f66ee83b06b607fb5 = $component; } ?>
 <?php if (isset($attributes)) { $__attributesOriginal7c1bf3a9346f208f66ee83b06b607fb5 = $attributes; } ?>
