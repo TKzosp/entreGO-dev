@@ -20,7 +20,7 @@
 -   php artisan migrate --force
 -   php artisan serve
 
-### Garantir o .env estaja configurado com o nome do database, user e password
+Garantir o .env estaja configurado com o nome do database, user e password
 ---
 
 ### Links Uteis
