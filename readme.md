@@ -19,7 +19,7 @@
 -   php artisan key:generate
 -   php artisan migrate --force
 -   php artisan serve <br>
-Garantir o .env estaja configurado com o nome do database, user e password
+Garantir o que .env estaja configurado com o nome do database, user e password
 ---
 
 ### Links Uteis
