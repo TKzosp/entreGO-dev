@@ -18,7 +18,7 @@
 -   npm run build
 -   php artisan key:generate
 -   php artisan migrate --force
--   php artisan serve /
+-   php artisan serve \
 Garantir o que .env estaja configurado com o nome do database, user e password
 ---
 
