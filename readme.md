@@ -51,7 +51,6 @@ Para instalar os pré-requisitos: https://laravel.com/docs/12.x/installation#ins
     -   Banco de dados entregas
         -   diagramação do banco
             -   definição de tabelas e colunas
-        -   definição de qual banco utilizar (Postgrees? mysql? mongoDB?)
 
 # Membros do grupo
 
