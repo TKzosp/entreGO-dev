@@ -6,6 +6,7 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\TrackingController;
 use App\Http\Controllers\PedidoController;
+use App\Models\Rastreamento;
 
 // ROTAS PÚBLICAS (SEM AUTH)
 
@@ -48,6 +49,19 @@ Route::middleware(['auth'])->group(function () {
 
     // Logout
     Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
+    Route::get('/tracking', [TrackingController::class, 'index'])->name('tracking.index');
+    Route::post('/tracking/otimizar', [TrackingController::class, 'otimizarRota'])->name('tracking.otimizar');
+    // Rota para a atualização da posição em tempo real
+Route::get('/tracking/rotas/{id}/posicao', function ($id) {
+    // Busca o último registo de rastreamento para esta rota
+    // Se não tiveres o Model, podes usar: DB::table('rastreamento')->where('rota_id', $id)->latest()->first();
+    $ultimoRastro = Rastreamento::where('rota_id', $id)->orderBy('created_at', 'desc')->first();
+    
+    return response()->json([
+        'latitude' => $ultimoRastro ? $ultimoRastro->latitude : null,
+        'longitude' => $ultimoRastro ? $ultimoRastro->longitude : null,
+    ]);
+})->name('tracking.posicao');
 });
 
 // Se o seu projeto original tiver isso aqui no final e estiver dando conflito de rotas de auth,

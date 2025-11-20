@@ -9,10 +9,6 @@ use App\Models\Rastreamento;
 class TrackingController extends Controller
 {
     // Tela de tracking (front)
-    public function index()
-    {
-        return view('tracking');
-    }
 
     // RF04 – Gerar rotas otimizadas
     public function otimizar(Request $request)
@@ -59,4 +55,31 @@ class TrackingController extends Controller
             'atualizado_em' => $registro->created_at,
         ]);
     }
+
+    public function index()
+{
+    // Retorna a view vazia para a tela "Geral" de geração de rotas
+    return view('tracking', [
+        'origem' => null,
+        'destino' => null,
+        'posicaoAtual' => null
+    ]);
+}
+
+public function show($pedidoId)
+{
+    $pedido = Pedido::with('enderecoEntrega')->findOrFail($pedidoId);
+    
+    // Exemplo de dados para preencher o mapa
+    $origem = ['lat' => -23.550520, 'lng' => -46.633308]; // Loja
+    $destino = [
+        'lat' => (float) $pedido->enderecoEntrega->latitude, 
+        'lng' => (float) $pedido->enderecoEntrega->longitude
+    ];
+    
+    // Simulação de posição atual (pegar da tabela 'rastreamento')
+    $posicaoAtual = ['lat' => -23.559, 'lng' => -46.640];
+
+    return view('tracking', compact('pedido', 'origem', 'destino', 'posicaoAtual'));
+}
 }

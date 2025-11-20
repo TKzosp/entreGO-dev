@@ -1045,3 +1045,19 @@ Did you mean one of these?
 #26 C:\\Users\\rafae\\Downloads\\cópia entrego\\artisan(16): Illuminate\\Foundation\\Application->handleCommand(Object(Symfony\\Component\\Console\\Input\\ArgvInput))
 #27 {main}
 "} 
+[2025-11-20 16:07:53] local.ERROR: Maximum execution time of 30 seconds exceeded {"exception":"[object] (Symfony\\Component\\ErrorHandler\\Error\\FatalError(code: 0): Maximum execution time of 30 seconds exceeded at C:\\Users\\rafae\\Downloads\\cópia entrego\\vendor\\symfony\\http-foundation\\ResponseHeaderBag.php:19)
+[stacktrace]
+#0 {main}
+"} 
+[2025-11-20 16:07:53] local.ERROR: Class "Symfony\Component\HttpFoundation\Response" not found {"exception":"[object] (Error(code: 0): Class \"Symfony\\Component\\HttpFoundation\\Response\" not found at C:\\Users\\rafae\\Downloads\\cópia entrego\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Exceptions\\Handler.php:860)
+[stacktrace]
+#0 C:\\Users\\rafae\\Downloads\\cópia entrego\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Exceptions\\Handler.php(840): Illuminate\\Foundation\\Exceptions\\Handler->convertExceptionToResponse(Object(Symfony\\Component\\ErrorHandler\\Error\\FatalError))
+#1 C:\\Users\\rafae\\Downloads\\cópia entrego\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Exceptions\\Handler.php(739): Illuminate\\Foundation\\Exceptions\\Handler->prepareResponse(Object(Illuminate\\Http\\Request), Object(Symfony\\Component\\ErrorHandler\\Error\\FatalError))
+#2 C:\\Users\\rafae\\Downloads\\cópia entrego\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Exceptions\\Handler.php(627): Illuminate\\Foundation\\Exceptions\\Handler->renderExceptionResponse(Object(Illuminate\\Http\\Request), Object(Symfony\\Component\\ErrorHandler\\Error\\FatalError))
+#3 C:\\Users\\rafae\\Downloads\\cópia entrego\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Bootstrap\\HandleExceptions.php(221): Illuminate\\Foundation\\Exceptions\\Handler->render(Object(Illuminate\\Http\\Request), Object(Symfony\\Component\\ErrorHandler\\Error\\FatalError))
+#4 C:\\Users\\rafae\\Downloads\\cópia entrego\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Bootstrap\\HandleExceptions.php(198): Illuminate\\Foundation\\Bootstrap\\HandleExceptions->renderHttpResponse(Object(Symfony\\Component\\ErrorHandler\\Error\\FatalError))
+#5 C:\\Users\\rafae\\Downloads\\cópia entrego\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Bootstrap\\HandleExceptions.php(234): Illuminate\\Foundation\\Bootstrap\\HandleExceptions->handleException(Object(Symfony\\Component\\ErrorHandler\\Error\\FatalError))
+#6 C:\\Users\\rafae\\Downloads\\cópia entrego\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Bootstrap\\HandleExceptions.php(258): Illuminate\\Foundation\\Bootstrap\\HandleExceptions->handleShutdown()
+#7 [internal function]: Illuminate\\Foundation\\Bootstrap\\HandleExceptions->{closure:Illuminate\\Foundation\\Bootstrap\\HandleExceptions::forwardsTo():257}()
+#8 {main}
+"} 
