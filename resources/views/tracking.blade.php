@@ -309,13 +309,8 @@
     <script src="https://maps.googleapis.com/maps/api/js?key={{ config('services.google.maps_key') }}&libraries=places,geometry"></script>
 
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            // ============================================================
-            // CONFIGURAÇÃO INICIAL E DADOS DO BLADE
-            // ============================================================
-            
-          
-const dadosIniciais = {
+        document.addEventListener('DOMContentLoaded', () => {          
+            const dadosIniciais = {
                 origem: {!! json_encode($origem ?? null) !!},
                 destino: {!! json_encode($destino ?? null) !!},
                 posicaoAtual: {!! json_encode($posicaoAtual ?? null) !!},
@@ -331,7 +326,6 @@ const dadosIniciais = {
             let trackingInterval = null;
 
             function initMap() {
-                // Define o centro: usa a posição atual do entregador, ou a origem, ou um fallback (SP)
                 const center = dadosIniciais.posicaoAtual || dadosIniciais.origem || { lat: -23.55052, lng: -46.633308 };
 
                 map = new google.maps.Map(document.getElementById('map'), {
@@ -341,14 +335,12 @@ const dadosIniciais = {
                     streetViewControl: false,
                 });
 
-                // Se já houver dados vindos do controller (Visualização de Pedido Específico)
                 if (dadosIniciais.origem && dadosIniciais.destino) {
                     renderizarPontosIniciais();
                 }
             }
 
             function renderizarPontosIniciais() {
-                // Marcador Origem (Loja)
                 new google.maps.Marker({
                     position: dadosIniciais.origem,
                     map: map,
@@ -356,7 +348,6 @@ const dadosIniciais = {
                     icon: 'http://maps.google.com/mapfiles/ms/icons/blue-dot.png'
                 });
 
-                // Marcador Destino (Cliente)
                 new google.maps.Marker({
                     position: dadosIniciais.destino,
                     map: map,
@@ -364,7 +355,6 @@ const dadosIniciais = {
                     icon: 'http://maps.google.com/mapfiles/ms/icons/red-dot.png'
                 });
 
-                // Marcador Entregador (Se existir)
                 if (dadosIniciais.posicaoAtual) {
                     trackingMarker = new google.maps.Marker({
                         position: dadosIniciais.posicaoAtual,

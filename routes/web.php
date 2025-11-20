@@ -3,9 +3,12 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\Auth\PasswordController; // Importante para mudar senha
+use App\Http\Controllers\Auth\EmailVerificationNotificationController; // Importante para o erro atual
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\TrackingController;
 use App\Http\Controllers\PedidoController;
+use App\Http\Controllers\ProfileController; // Controller do Perfil
 use App\Models\Rastreamento;
 
 // ==============================================================================
@@ -27,24 +30,36 @@ Route::middleware(['auth'])->group(function () {
 
     // Dashboard
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
-    // Redirecionamento para manter compatibilidade com links antigos
     Route::get('/dashboard', function () {
         return redirect()->route('dashboard');
-    });
+    })->name('dashboard.redirect');
+
+    // --------------------------------------------------------------------------
+    // MÓDULO DE PERFIL E SEGURANÇA
+    // --------------------------------------------------------------------------
+    
+    // Exibir e Editar Perfil
+    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile');
+    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+
+    // Alterar Senha (corrige erros no form de senha)
+    Route::put('password', [PasswordController::class, 'update'])->name('password.update');
+
+    // Reenviar Email de Verificação (corrige o erro RouteNotFoundException)
+    Route::post('email/verification-notification', [EmailVerificationNotificationController::class, 'store'])
+        ->middleware('throttle:6,1')
+        ->name('verification.send');
 
     // --------------------------------------------------------------------------
     // MÓDULO DE TRACKING
     // --------------------------------------------------------------------------
     
-    // 1. Tela principal do mapa (usa o nome 'tracking' conforme navigation.blade.php)
     Route::get('/tracking', [TrackingController::class, 'index'])->name('tracking');
 
-    // 2. Otimização de rotas (AJAX)
     Route::post('/tracking/otimizar', [TrackingController::class, 'otimizar'])
         ->name('tracking.otimizar');
 
-    // 3. API de Posição em Tempo Real (AJAX)
-    // O frontend chama: /tracking/rotas/{id}/posicao-atual
     Route::get('/tracking/rotas/{id}/posicao-atual', function ($id) {
         $ultimoRastro = Rastreamento::where('rota_id', $id)
             ->orderBy('created_at', 'desc')
@@ -57,16 +72,10 @@ Route::middleware(['auth'])->group(function () {
     })->name('tracking.posicao-atual');
 
     // --------------------------------------------------------------------------
-    // OUTROS
+    // PEDIDOS E OUTROS
     // --------------------------------------------------------------------------
 
-    // Views simples
     Route::view('/registration', 'registration')->name('registration');
-    Route::view('/profile', 'profile')->name('profile');
-
-    // Pedidos
     Route::post('/pedidos', [PedidoController::class, 'store'])->name('pedidos.store');
-
-    // Logout
     Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 });
