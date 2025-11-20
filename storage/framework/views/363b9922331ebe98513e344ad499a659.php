@@ -302,271 +302,241 @@
     </div>
 </section>
 <?php $__env->stopSection(); ?>
-
 <?php $__env->startPush('scripts'); ?>
     
-    <script src="https://maps.googleapis.com/maps/api/js?key=<?php echo e(env('GOOGLE_MAPS_API_KEY')); ?>&libraries=places,geometry"></script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=<?php echo e(config('services.google.maps_key')); ?>&libraries=places,geometry"></script>
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // MAPA BASE
+            // ============================================================
+            // CONFIGURAÇÃO INICIAL E DADOS DO BLADE
+            // ============================================================
+            
+          
+const dadosIniciais = {
+                origem: <?php echo json_encode($origem ?? null); ?>,
+                destino: <?php echo json_encode($destino ?? null); ?>,
+                posicaoAtual: <?php echo json_encode($posicaoAtual ?? null); ?>,
+                rotaUrl: "<?php echo e(route('tracking.otimizar')); ?>",
+                csrfToken: "<?php echo e(csrf_token()); ?>"
+            };
+
             let map;
             let rotaPolyline = null;
             let rotaBounds = null;
+            let markers = [];
             let trackingMarker = null;
             let trackingInterval = null;
 
             function initMap() {
+                // Define o centro: usa a posição atual do entregador, ou a origem, ou um fallback (SP)
+                const center = dadosIniciais.posicaoAtual || dadosIniciais.origem || { lat: -23.55052, lng: -46.633308 };
+
                 map = new google.maps.Map(document.getElementById('map'), {
-                    center: { lat: -23.55052, lng: -46.633308 }, // SP como default
-                    zoom: 12,
+                    center: center,
+                    zoom: 14,
                     mapTypeControl: false,
                     streetViewControl: false,
                 });
+
+                // Se já houver dados vindos do controller (Visualização de Pedido Específico)
+                if (dadosIniciais.origem && dadosIniciais.destino) {
+                    renderizarPontosIniciais();
+                }
+            }
+
+            function renderizarPontosIniciais() {
+                // Marcador Origem (Loja)
+                new google.maps.Marker({
+                    position: dadosIniciais.origem,
+                    map: map,
+                    title: "Origem",
+                    icon: 'http://maps.google.com/mapfiles/ms/icons/blue-dot.png'
+                });
+
+                // Marcador Destino (Cliente)
+                new google.maps.Marker({
+                    position: dadosIniciais.destino,
+                    map: map,
+                    title: "Entrega",
+                    icon: 'http://maps.google.com/mapfiles/ms/icons/red-dot.png'
+                });
+
+                // Marcador Entregador (Se existir)
+                if (dadosIniciais.posicaoAtual) {
+                    trackingMarker = new google.maps.Marker({
+                        position: dadosIniciais.posicaoAtual,
+                        map: map,
+                        title: "Entregador",
+                        icon: 'http://maps.google.com/mapfiles/ms/icons/truck.png'
+                    });
+                }
             }
 
             initMap();
 
-            // ==============================
-            // RF04 / RF10 – GERAR ROTA
-            // ==============================
+            // ============================================================
+            // RF04 / RF10 – GERAR ROTA OTIMIZADA
+            // ============================================================
             const formRotas = document.getElementById('formRotas');
             const destinosContainer = document.getElementById('destinosContainer');
             const btnAddDestino = document.getElementById('btnAddDestino');
             const rotaStatus = document.getElementById('rotaStatus');
-            const rotaResumo = document.getElementById('rotaResumo');
-            const rotaDistanciaEl = document.getElementById('rotaDistancia');
-            const rotaTempoEl = document.getElementById('rotaTempo');
-            const rotaWaypointsQtdEl = document.getElementById('rotaWaypointsQtd');
-            const listaWaypoints = document.getElementById('listaWaypoints');
-            const listaWaypointsItens = document.getElementById('listaWaypointsItens');
 
-            // adicionar linha de destino
-            function addDestinoRow(value = '') {
-                const row = document.createElement('div');
-                row.className = 'flex gap-2 destino-row';
-
-                row.innerHTML = `
-                    <input
-                        type="text"
-                        name="destinos[]"
-                        placeholder="Ex.: Rua do Porto, 200 - Campinas"
-                        class="flex-1 rounded-lg border-slate-200 text-sm shadow-sm focus:border-entrego-blue focus:ring-entrego-blue"
-                        required
-                        value="${value}"
-                    >
-                    <button
-                        type="button"
-                        class="btn-remove-destino text-xs text-slate-400 hover:text-rose-500"
-                        title="Remover"
-                    >
-                        ✕
-                    </button>
-                `;
-                destinosContainer.appendChild(row);
+            // Adicionar novo input de destino
+            if(btnAddDestino) {
+                btnAddDestino.addEventListener('click', () => {
+                    const row = document.createElement('div');
+                    row.className = 'flex gap-2 destino-row';
+                    row.innerHTML = `
+                        <input type="text" name="destinos[]" placeholder="Ex.: Rua do Porto, 200 - Campinas"
+                            class="flex-1 rounded-lg border-slate-200 text-sm shadow-sm focus:border-entrego-blue focus:ring-entrego-blue" required>
+                        <button type="button" class="btn-remove-destino text-xs text-slate-400 hover:text-rose-500" title="Remover">✕</button>
+                    `;
+                    destinosContainer.appendChild(row);
+                });
             }
 
-            // Caso queira começar com duas linhas:
-            if (destinosContainer.querySelectorAll('.destino-row').length === 0) {
-                addDestinoRow();
-            }
-
-            btnAddDestino.addEventListener('click', () => {
-                addDestinoRow();
-            });
-
-            destinosContainer.addEventListener('click', (e) => {
-                if (e.target.classList.contains('btn-remove-destino')) {
-                    const rows = destinosContainer.querySelectorAll('.destino-row');
-                    if (rows.length > 1) {
+            // Remover destino
+            if(destinosContainer) {
+                destinosContainer.addEventListener('click', (e) => {
+                    if (e.target.classList.contains('btn-remove-destino')) {
                         e.target.closest('.destino-row').remove();
                     }
-                }
-            });
+                });
+            }
 
-            formRotas.addEventListener('submit', async (e) => {
-                e.preventDefault();
-                rotaStatus.textContent = 'Gerando rota otimizada...';
-                rotaStatus.classList.remove('text-rose-500');
-                rotaStatus.classList.add('text-slate-400');
+            // Submit do Formulário de Rota
+            if(formRotas) {
+                formRotas.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    rotaStatus.textContent = 'Calculando rota...';
+                    rotaStatus.className = 'text-[11px] text-slate-400';
 
-                const origem = document.getElementById('origemInput').value.trim();
-                const destinosInputs = Array.from(
-                    destinosContainer.querySelectorAll('input[name="destinos[]"]')
-                );
-                const destinos = destinosInputs
-                    .map(i => i.value.trim())
-                    .filter(v => v.length > 0);
+                    const origem = document.getElementById('origemInput').value;
+                    const destinos = Array.from(document.querySelectorAll('input[name="destinos[]"]'))
+                                        .map(input => input.value)
+                                        .filter(val => val.length > 0);
 
-                if (!origem || destinos.length === 0) {
-                    rotaStatus.textContent = 'Informe uma origem e pelo menos um destino.';
-                    rotaStatus.classList.remove('text-slate-400');
-                    rotaStatus.classList.add('text-rose-500');
-                    return;
-                }
-
-                try {
-                    const response = await fetch('<?php echo e(route('tracking.otimizar') ?? '#'); ?>', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Accept': 'application/json',
-                            'X-CSRF-TOKEN': '<?php echo e(csrf_token()); ?>'
-                        },
-                        body: JSON.stringify({
-                            origem,
-                            destinos
-                        })
-                    });
-
-                    if (!response.ok) {
-                        throw new Error('Erro ao gerar rota.');
-                    }
-
-                    const data = await response.json();
-
-                    // Espera que o backend retorne o JSON da Directions API em "data"
-                    if (!data.routes || !data.routes.length) {
-                        throw new Error('Nenhuma rota encontrada para os endereços informados.');
-                    }
-
-                    const route = data.routes[0];
-
-                    // Limpar polyline anterior
-                    if (rotaPolyline) {
-                        rotaPolyline.setMap(null);
-                    }
-
-                    // Decodificar polyline
-                    const points = google.maps.geometry.encoding.decodePath(
-                        route.overview_polyline.points
-                    );
-
-                    rotaPolyline = new google.maps.Polyline({
-                        path: points,
-                        map: map,
-                        strokeOpacity: 0.9,
-                        strokeWeight: 5
-                    });
-
-                    // Ajustar bounds
-                    rotaBounds = new google.maps.LatLngBounds();
-                    points.forEach(p => rotaBounds.extend(p));
-                    map.fitBounds(rotaBounds);
-
-                    // Resumo (distância + duração)
-                    let totalDistance = 0;
-                    let totalDuration = 0;
-                    route.legs.forEach(leg => {
-                        totalDistance += leg.distance.value; // em metros
-                        totalDuration += leg.duration.value; // em segundos
-                    });
-
-                    const km = (totalDistance / 1000).toFixed(1);
-                    const horas = Math.floor(totalDuration / 3600);
-                    const minutos = Math.round((totalDuration % 3600) / 60);
-
-                    rotaDistanciaEl.textContent = `${km} km`;
-                    rotaTempoEl.textContent = horas > 0
-                        ? `${horas}h ${minutos}min`
-                        : `${minutos} min`;
-                    rotaWaypointsQtdEl.textContent = route.legs.length - 1; // destinos intermediários
-
-                    rotaResumo.classList.remove('hidden');
-
-                    // Lista de waypoints em ordem
-                    listaWaypointsItens.innerHTML = '';
-                    const waypointOrder = route.waypoint_order || [];
-                    destinos.forEach((enderecoOriginal, indexOriginal) => {
-                        const ordemOtimizada = waypointOrder.indexOf(indexOriginal);
-                        listaWaypointsItens.innerHTML += `
-                            <li>
-                                <span class="font-semibold mr-1">${ordemOtimizada + 1}.</span>
-                                ${enderecoOriginal}
-                            </li>
-                        `;
-                    });
-                    if (destinos.length) {
-                        listaWaypoints.classList.remove('hidden');
-                    }
-
-                    rotaStatus.textContent = 'Rota gerada com sucesso.';
-                } catch (err) {
-                    rotaStatus.textContent = err.message || 'Erro ao gerar rota.';
-                    rotaStatus.classList.remove('text-slate-400');
-                    rotaStatus.classList.add('text-rose-500');
-                }
-            });
-
-            // ==============================
-            // RF05 – RASTREAMENTO EM TEMPO REAL
-            // ==============================
-            const rotaIdTrackingInput = document.getElementById('rotaIdTracking');
-            const btnIniciarRastreamento = document.getElementById('btnIniciarRastreamento');
-            const btnPararRastreamento = document.getElementById('btnPararRastreamento');
-            const trackingStatus = document.getElementById('trackingStatus');
-
-            btnIniciarRastreamento.addEventListener('click', () => {
-                const rotaId = rotaIdTrackingInput.value.trim();
-                if (!rotaId) {
-                    trackingStatus.textContent = 'Informe o ID da rota para iniciar o rastreamento.';
-                    trackingStatus.classList.add('text-rose-500');
-                    return;
-                }
-
-                trackingStatus.classList.remove('text-rose-500');
-                trackingStatus.textContent = `Rastreamento iniciado para a rota #${rotaId}. Atualizando posição a cada 5 segundos.`;
-
-                if (trackingInterval) {
-                    clearInterval(trackingInterval);
-                }
-
-                trackingInterval = setInterval(async () => {
                     try {
-                        // Ajuste este endpoint para o que você criar no backend
-                        const resp = await fetch(`/tracking/rotas/${rotaId}/posicao-atual`, {
-                            headers: { 'Accept': 'application/json' }
+                        const response = await fetch(dadosIniciais.rotaUrl, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json',
+                                'X-CSRF-TOKEN': dadosIniciais.csrfToken
+                            },
+                            body: JSON.stringify({ origem, destinos })
                         });
 
-                        if (!resp.ok) return;
+                        const data = await response.json();
 
-                        const info = await resp.json();
-                        if (!info || typeof info.latitude === 'undefined' || typeof info.longitude === 'undefined') {
-                            return;
+                        if (!response.ok || !data.routes || !data.routes.length) {
+                            throw new Error(data.message || 'Rota não encontrada.');
                         }
 
-                        const lat = parseFloat(info.latitude);
-                        const lng = parseFloat(info.longitude);
-                        if (Number.isNaN(lat) || Number.isNaN(lng)) return;
+                        desenharRotaNoMapa(data.routes[0]);
+                        rotaStatus.textContent = 'Rota gerada com sucesso!';
+                        rotaStatus.className = 'text-[11px] text-emerald-600';
 
-                        const pos = { lat, lng };
-
-                        if (!trackingMarker) {
-                            trackingMarker = new google.maps.Marker({
-                                position: pos,
-                                map: map,
-                                title: `Rota #${rotaId}`
-                            });
-                        } else {
-                            trackingMarker.setPosition(pos);
-                        }
-
-                        map.panTo(pos);
-                    } catch (e) {
-                        console.error(e);
+                    } catch (err) {
+                        console.error(err);
+                        rotaStatus.textContent = 'Erro: ' + err.message;
+                        rotaStatus.className = 'text-[11px] text-rose-500';
                     }
-                }, 5000);
-            });
+                });
+            }
 
-            btnPararRastreamento.addEventListener('click', () => {
-                if (trackingInterval) {
-                    clearInterval(trackingInterval);
-                    trackingInterval = null;
+            function desenharRotaNoMapa(route) {
+                // Limpar rota anterior
+                if (rotaPolyline) rotaPolyline.setMap(null);
+
+                const points = google.maps.geometry.encoding.decodePath(route.overview_polyline.points);
+                
+                rotaPolyline = new google.maps.Polyline({
+                    path: points,
+                    map: map,
+                    strokeColor: "#2563EB", // entrego-blue
+                    strokeOpacity: 0.8,
+                    strokeWeight: 5,
+                });
+
+                const bounds = new google.maps.LatLngBounds();
+                points.forEach(p => bounds.extend(p));
+                map.fitBounds(bounds);
+
+                // Atualizar painel de resumo (se existir os elementos)
+                const distElement = document.getElementById('rotaDistancia');
+                if(distElement) {
+                    let totalMetros = 0;
+                    let totalSegundos = 0;
+                    route.legs.forEach(leg => {
+                        totalMetros += leg.distance.value;
+                        totalSegundos += leg.duration.value;
+                    });
+                    distElement.textContent = (totalMetros / 1000).toFixed(1) + ' km';
+                    document.getElementById('rotaTempo').textContent = Math.round(totalSegundos / 60) + ' min';
                 }
-                trackingStatus.textContent = 'Rastreamento pausado.';
-            });
+            }
+
+            // ============================================================
+            // RF05 – RASTREAMENTO LIVE
+            // ============================================================
+            const btnIniciar = document.getElementById('btnIniciarRastreamento');
+            const btnParar = document.getElementById('btnPararRastreamento');
+            const inputRotaId = document.getElementById('rotaIdTracking');
+            const statusTracking = document.getElementById('trackingStatus');
+
+            if(btnIniciar) {
+                btnIniciar.addEventListener('click', () => {
+                    const rotaId = inputRotaId.value;
+                    if(!rotaId) return alert('Informe o ID da rota');
+
+                    statusTracking.textContent = 'Rastreando...';
+                    
+                    if(trackingInterval) clearInterval(trackingInterval);
+
+                    // Função de polling
+                    const fetchPosicao = async () => {
+                        try {
+                            // Atenção: Ajuste a URL para corresponder à sua rota Laravel
+                            const res = await fetch(`/tracking/rotas/${rotaId}/posicao`);
+                            const data = await res.json();
+
+                            if(data.latitude && data.longitude) {
+                                const novaPos = { 
+                                    lat: parseFloat(data.latitude), 
+                                    lng: parseFloat(data.longitude) 
+                                };
+
+                                if(!trackingMarker) {
+                                    trackingMarker = new google.maps.Marker({
+                                        position: novaPos,
+                                        map: map,
+                                        icon: 'http://maps.google.com/mapfiles/ms/icons/truck.png',
+                                        title: "Veículo"
+                                    });
+                                } else {
+                                    trackingMarker.setPosition(novaPos);
+                                }
+                            }
+                        } catch(e) {
+                            console.log("Erro no rastreamento:", e);
+                        }
+                    };
+
+                    fetchPosicao(); // Chama imediatamente
+                    trackingInterval = setInterval(fetchPosicao, 5000); // Repete a cada 5s
+                });
+            }
+
+            if(btnParar) {
+                btnParar.addEventListener('click', () => {
+                    if(trackingInterval) clearInterval(trackingInterval);
+                    statusTracking.textContent = 'Rastreamento parado.';
+                });
+            }
         });
     </script>
 <?php $__env->stopPush(); ?>
-
 <?php echo $__env->make('layouts.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\Users\rafae\Downloads\cópia entrego\resources\views/tracking.blade.php ENDPATH**/ ?>

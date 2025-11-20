@@ -34,7 +34,7 @@ unset($__defined_vars, $__key, $__value); ?>
         hasCode: <?php echo e($frame->snippet() ? 'true' : 'false'); ?>
 
     }"
-    class="group rounded-lg border border-neutral-200 dark:border-white/10 shadow-xs"
+    class="group rounded-lg border border-neutral-200 dark:border-white/10 overflow-hidden shadow-xs"
     :class="{ 'dark:border-white/5': expanded }"
 >
     <div

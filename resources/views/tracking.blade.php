@@ -314,12 +314,12 @@
             // CONFIGURAÇÃO INICIAL E DADOS DO BLADE
             // ============================================================
             
-            // Passamos os dados do PHP para o JS de forma segura usando @json
-            const dadosIniciais = {
-                origem: @json($origem ?? null),   // Ex: { lat: -23.5, lng: -46.6 }
-                destino: @json($destino ?? null), // Ex: { lat: -23.5, lng: -46.6 }
-                posicaoAtual: @json($posicaoAtual ?? null),
-                rotaUrl: "{{ route('tracking.otimizar') }}", // Aspas duplas externas protegem as simples internas
+          
+const dadosIniciais = {
+                origem: {!! json_encode($origem ?? null) !!},
+                destino: {!! json_encode($destino ?? null) !!},
+                posicaoAtual: {!! json_encode($posicaoAtual ?? null) !!},
+                rotaUrl: "{{ route('tracking.otimizar') }}",
                 csrfToken: "{{ csrf_token() }}"
             };
 
