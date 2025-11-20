@@ -1,10 +1,8 @@
-@extends('layouts.app')
+<?php $__env->startSection('title', 'Relatórios de Desempenho'); ?>
 
-@section('title', 'Relatórios de Desempenho')
-
-@section('content')
+<?php $__env->startSection('content'); ?>
     <div class="container mx-auto p-6 space-y-6">
-        {{-- Cabeçalho e filtros --}}
+        
         <header class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
             <div>
                 <h1 class="text-2xl font-semibold text-slate-900">
@@ -16,7 +14,7 @@
             </div>
 
             <div class="flex flex-wrap items-center gap-3">
-                {{-- Filtro de período --}}
+                
                 <div class="flex flex-col">
                     <label class="text-xs font-medium text-slate-500 mb-1">
                         Período
@@ -32,7 +30,7 @@
                     </select>
                 </div>
 
-                {{-- Filtro de categoria de veículo --}}
+                
                 <div class="flex flex-col">
                     <label class="text-xs font-medium text-slate-500 mb-1">
                         Categoria de veículo
@@ -51,9 +49,9 @@
             </div>
         </header>
 
-        {{-- Cards de resumo (RF08) --}}
+        
         <section class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-            {{-- Eficiência das rotas --}}
+            
             <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-4 flex flex-col gap-2">
                 <div class="flex items-center justify-between">
                     <span class="text-xs font-medium text-slate-500 uppercase tracking-wide">
@@ -62,14 +60,15 @@
                     <span class="material-icons text-emerald-500 text-base">trending_up</span>
                 </div>
                 <p class="text-2xl font-semibold text-slate-900">
-                    {{ number_format($resumo['eficiencia_rotas'] ?? 0, 1, ',', '.') }}%
+                    <?php echo e(number_format($resumo['eficiencia_rotas'] ?? 0, 1, ',', '.')); ?>%
                 </p>
                 <p class="text-xs text-emerald-600">
-                    {{ $resumo['eficiencia_rotas_texto'] ?? 'Comparado ao período anterior' }}
+                    <?php echo e($resumo['eficiencia_rotas_texto'] ?? 'Comparado ao período anterior'); ?>
+
                 </p>
             </div>
 
-            {{-- Número de coletas --}}
+            
             <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-4 flex flex-col gap-2">
                 <div class="flex items-center justify-between">
                     <span class="text-xs font-medium text-slate-500 uppercase tracking-wide">
@@ -78,14 +77,16 @@
                     <span class="material-icons text-blue-500 text-base">local_shipping</span>
                 </div>
                 <p class="text-2xl font-semibold text-slate-900">
-                    {{ $resumo['total_coletas'] ?? 0 }}
+                    <?php echo e($resumo['total_coletas'] ?? 0); ?>
+
                 </p>
                 <p class="text-xs text-slate-500">
-                    {{ $resumo['total_coletas_texto'] ?? 'Total de coletas concluídas no período' }}
+                    <?php echo e($resumo['total_coletas_texto'] ?? 'Total de coletas concluídas no período'); ?>
+
                 </p>
             </div>
 
-            {{-- Tempo médio de entrega --}}
+            
             <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-4 flex flex-col gap-2">
                 <div class="flex items-center justify-between">
                     <span class="text-xs font-medium text-slate-500 uppercase tracking-wide">
@@ -94,14 +95,16 @@
                     <span class="material-icons text-amber-500 text-base">schedule</span>
                 </div>
                 <p class="text-2xl font-semibold text-slate-900">
-                    {{ $resumo['tempo_medio_entrega_formatado'] ?? '—' }}
+                    <?php echo e($resumo['tempo_medio_entrega_formatado'] ?? '—'); ?>
+
                 </p>
                 <p class="text-xs text-slate-500">
-                    {{ $resumo['tempo_medio_entrega_texto'] ?? 'Média entre coleta e entrega' }}
+                    <?php echo e($resumo['tempo_medio_entrega_texto'] ?? 'Média entre coleta e entrega'); ?>
+
                 </p>
             </div>
 
-            {{-- Falhas processuais --}}
+            
             <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-4 flex flex-col gap-2">
                 <div class="flex items-center justify-between">
                     <span class="text-xs font-medium text-slate-500 uppercase tracking-wide">
@@ -110,17 +113,19 @@
                     <span class="material-icons text-rose-500 text-base">error_outline</span>
                 </div>
                 <p class="text-2xl font-semibold text-slate-900">
-                    {{ $resumo['falhas_processuais'] ?? 0 }}
+                    <?php echo e($resumo['falhas_processuais'] ?? 0); ?>
+
                 </p>
-                <p class="text-xs {{ ($resumo['falhas_processuais'] ?? 0) > 0 ? 'text-rose-500' : 'text-emerald-600' }}">
-                    {{ $resumo['falhas_processuais_texto'] ?? 'Falhas registradas no período' }}
+                <p class="text-xs <?php echo e(($resumo['falhas_processuais'] ?? 0) > 0 ? 'text-rose-500' : 'text-emerald-600'); ?>">
+                    <?php echo e($resumo['falhas_processuais_texto'] ?? 'Falhas registradas no período'); ?>
+
                 </p>
             </div>
         </section>
 
-        {{-- Gráficos principais (RF09) --}}
+        
         <section class="grid grid-cols-1 xl:grid-cols-3 gap-6">
-            {{-- Tempo médio de entrega por período --}}
+            
             <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-4 xl:col-span-2 flex flex-col gap-4">
                 <div class="flex items-center justify-between">
                     <div>
@@ -141,7 +146,7 @@
                 </div>
             </div>
 
-            {{-- Coletas por categoria de veículo --}}
+            
             <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-4 flex flex-col gap-4">
                 <div>
                     <h2 class="text-sm font-semibold text-slate-800">
@@ -158,9 +163,9 @@
             </div>
         </section>
 
-        {{-- Detalhamento + gráfico de falhas (RF08 + RF09) --}}
+        
         <section class="grid grid-cols-1 xl:grid-cols-3 gap-6">
-            {{-- Tabela: eficiência por rota --}}
+            
             <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-4 xl:col-span-2 flex flex-col gap-4">
                 <div class="flex items-center justify-between">
                     <div>
@@ -186,54 +191,60 @@
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100">
-                            @forelse($rotas ?? [] as $rota)
+                            <?php $__empty_1 = true; $__currentLoopData = $rotas ?? []; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $rota): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
                                 <tr class="hover:bg-slate-50/80">
                                     <td class="px-4 py-2 text-slate-700">
-                                        {{ $rota['nome'] ?? '—' }}
+                                        <?php echo e($rota['nome'] ?? '—'); ?>
+
                                     </td>
                                     <td class="px-4 py-2 text-slate-600">
-                                        {{ $rota['veiculo'] ?? '—' }}
+                                        <?php echo e($rota['veiculo'] ?? '—'); ?>
+
                                     </td>
                                     <td class="px-4 py-2 text-slate-700">
-                                        {{ $rota['coletas'] ?? 0 }}
+                                        <?php echo e($rota['coletas'] ?? 0); ?>
+
                                     </td>
                                     <td class="px-4 py-2 text-slate-700">
-                                        {{ $rota['tempo_medio'] ?? '—' }}
+                                        <?php echo e($rota['tempo_medio'] ?? '—'); ?>
+
                                     </td>
                                     <td class="px-4 py-2">
                                         <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium
-                                            @if(($rota['eficiencia'] ?? 0) >= 90)
+                                            <?php if(($rota['eficiencia'] ?? 0) >= 90): ?>
                                                 bg-emerald-50 text-emerald-700
-                                            @elseif(($rota['eficiencia'] ?? 0) >= 75)
+                                            <?php elseif(($rota['eficiencia'] ?? 0) >= 75): ?>
                                                 bg-amber-50 text-amber-700
-                                            @else
+                                            <?php else: ?>
                                                 bg-rose-50 text-rose-700
-                                            @endif
+                                            <?php endif; ?>
                                         ">
-                                            {{ number_format($rota['eficiencia'] ?? 0, 1, ',', '.') }}%
+                                            <?php echo e(number_format($rota['eficiencia'] ?? 0, 1, ',', '.')); ?>%
                                         </span>
                                     </td>
                                     <td class="px-4 py-2">
                                         <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium
-                                            {{ ($rota['falhas'] ?? 0) > 0 ? 'bg-rose-50 text-rose-700' : 'bg-emerald-50 text-emerald-700' }}
+                                            <?php echo e(($rota['falhas'] ?? 0) > 0 ? 'bg-rose-50 text-rose-700' : 'bg-emerald-50 text-emerald-700'); ?>
+
                                         ">
-                                            {{ $rota['falhas'] ?? 0 }}
+                                            <?php echo e($rota['falhas'] ?? 0); ?>
+
                                         </span>
                                     </td>
                                 </tr>
-                            @empty
+                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
                                 <tr>
                                     <td colspan="6" class="px-4 py-6 text-center text-sm text-slate-400">
                                         Nenhuma rota encontrada para o filtro atual.
                                     </td>
                                 </tr>
-                            @endforelse
+                            <?php endif; ?>
                         </tbody>
                     </table>
                 </div>
             </div>
 
-            {{-- Falhas por tipo --}}
+            
             <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-4 flex flex-col gap-4">
                 <div>
                     <h2 class="text-sm font-semibold text-slate-800">
@@ -250,22 +261,22 @@
             </div>
         </section>
 
-        {{-- Elemento escondido para enviar dados ao JS --}}
+        
         <div
             id="dashboardData"
             class="hidden"
-            data-tempo-entrega-labels='@json($seriesTempoEntrega["labels"] ?? [])'
-            data-tempo-entrega-data='@json($seriesTempoEntrega["values"] ?? [])'
-            data-coletas-veiculo-labels='@json($seriesColetasVeiculo["labels"] ?? [])'
-            data-coletas-veiculo-data='@json($seriesColetasVeiculo["values"] ?? [])'
-            data-falhas-tipo-labels='@json($seriesFalhasTipo["labels"] ?? [])'
-            data-falhas-tipo-data='@json($seriesFalhasTipo["values"] ?? [])'
+            data-tempo-entrega-labels='<?php echo json_encode($seriesTempoEntrega["labels"] ?? [], 15, 512) ?>'
+            data-tempo-entrega-data='<?php echo json_encode($seriesTempoEntrega["values"] ?? [], 15, 512) ?>'
+            data-coletas-veiculo-labels='<?php echo json_encode($seriesColetasVeiculo["labels"] ?? [], 15, 512) ?>'
+            data-coletas-veiculo-data='<?php echo json_encode($seriesColetasVeiculo["values"] ?? [], 15, 512) ?>'
+            data-falhas-tipo-labels='<?php echo json_encode($seriesFalhasTipo["labels"] ?? [], 15, 512) ?>'
+            data-falhas-tipo-data='<?php echo json_encode($seriesFalhasTipo["values"] ?? [], 15, 512) ?>'
         ></div>
     </div>
-@endsection
+<?php $__env->stopSection(); ?>
 
-@push('scripts')
-    {{-- Chart.js via CDN --}}
+<?php $__env->startPush('scripts'); ?>
+    
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
@@ -376,4 +387,6 @@
             }
         });
     </script>
-@endpush
+<?php $__env->stopPush(); ?>
+
+<?php echo $__env->make('layouts.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\Users\rafae\Downloads\cópia entrego\resources\views/dashboard.blade.php ENDPATH**/ ?>

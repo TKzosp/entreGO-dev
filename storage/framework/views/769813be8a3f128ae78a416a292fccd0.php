@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>@yield('title', 'entreGO')</title>
+    <title><?php echo $__env->yieldContent('title', 'entreGO'); ?></title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
@@ -40,11 +40,11 @@
     </style>
 </head>
 <body class="flex flex-col min-h-screen">
-    @include('layouts.navigation')
+    <?php echo $__env->make('layouts.navigation', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
 
     <main class="flex-grow pt-20">
-        @yield('content')
+        <?php echo $__env->yieldContent('content'); ?>
     </main>
-    @stack('scripts')
+    <?php echo $__env->yieldPushContent('scripts'); ?>
 </body>
-</html>
+</html><?php /**PATH C:\Users\rafae\Downloads\cópia entrego\resources\views/layouts/app.blade.php ENDPATH**/ ?>
