@@ -19,7 +19,8 @@
 -   php artisan key:generate
 -   php artisan migrate --force
 -   php artisan serve \
-Garantir o que .env estaja configurado com o nome do database, user e password
+    Garantir o que .env estaja configurado com o nome do database, user e password
+
 ---
 
 ### Links Uteis
@@ -31,6 +32,8 @@ Para instalar os pré-requisitos: https://laravel.com/docs/12.x/installation#ins
 -   /login - Tela de Login
 -   /Register - tela de registro de novo usuario
 -   / - Tela principal com as consultas
+-   /tracking - Tela de rotas
+-   /Profile - Tela de dados do usuario
 
 # To do
 
@@ -51,6 +54,7 @@ Para instalar os pré-requisitos: https://laravel.com/docs/12.x/installation#ins
     -   Banco de dados entregas
         -   diagramação do banco
             -   definição de tabelas e colunas
+    -   Integração com 0Auth para login com serviços de terceiros (google e github)
 
 # Membros do grupo
 
