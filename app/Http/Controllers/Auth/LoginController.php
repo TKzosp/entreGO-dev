@@ -10,7 +10,7 @@ class LoginController extends Controller
 {
     public function showLoginForm()
     {
-        return view('auth.login'); // ajuste o caminho da view se necessário
+        return view('auth.login'); 
     }
 
     public function login(Request $request)
@@ -20,7 +20,7 @@ class LoginController extends Controller
         'senha' => ['required'],
     ]);
 
-    // Tente autenticar
+    
     if (Auth::attempt([
         'email' => $credentials['email'],
         'password' => $credentials['senha'],
@@ -29,7 +29,7 @@ class LoginController extends Controller
         return redirect()->intended('/teste');
     }
 
-    // Se falhar, retorna com mensagem de erro
+    
     return back()->withErrors([
         'email' => 'Credenciais inválidas.',
     ])->withInput();

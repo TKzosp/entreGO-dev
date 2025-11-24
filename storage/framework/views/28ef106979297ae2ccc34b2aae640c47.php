@@ -1,13 +1,11 @@
-@extends('layouts.app')
+<?php $__env->startSection('title', 'Tracking'); ?>
 
-@section('title', 'Tracking')
-
-@section('content')
+<?php $__env->startSection('content'); ?>
 <section
     class="container mx-auto p-6 min-h-[calc(100vh-5rem)] flex flex-col lg:flex-row gap-6"
     id="tracking"
 >
-    {{-- MAPA E ROTAS (RF04 / RF10 / RF05 visual) --}}
+    
     <div class="w-full lg:w-2/3 bg-white rounded-xl shadow-sm border border-slate-100 flex flex-col overflow-hidden">
         <header class="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
             <div>
@@ -22,7 +20,7 @@
 
         <div id="map" class="flex-1 min-h-[420px] bg-slate-100"></div>
 
-        {{-- Resumo da rota gerada --}}
+        
         <div id="rotaResumo" class="px-4 py-3 border-t border-slate-100 text-xs text-slate-600 hidden">
             <div class="flex flex-wrap gap-4">
                 <div>
@@ -41,10 +39,10 @@
         </div>
     </div>
 
-    <!-- {{-- PAINEL LATERAL: ROTAS, RASTREAMENTO, AGENDAMENTO --}} -->
+    <!--  -->
     <div class="w-full lg:w-1/3 space-y-4">
 
-        <!-- {{-- RF04 + RF10 – GERAR ROTAS OTIMIZADAS / GERENCIAR WAYPOINTS --}} -->
+        <!--  -->
         <section class="bg-white rounded-xl shadow-sm border border-slate-100 p-4 space-y-3">
             <header class="flex items-center justify-between">
                 <div>
@@ -58,9 +56,9 @@
             </header>
 
             <form id="formRotas" class="space-y-3">
-                @csrf
+                <?php echo csrf_field(); ?>
 
-                {{-- ORIGEM --}}
+                
                 <div class="space-y-1">
                     <label class="text-xs font-medium text-slate-600">
                         Origem
@@ -75,7 +73,7 @@
                     >
                 </div>
 
-                {{-- DESTINOS / WAYPOINTS --}}
+                
                 <div class="space-y-1">
                     <div class="flex items-center justify-between">
                         <label class="text-xs font-medium text-slate-600">
@@ -91,7 +89,7 @@
                     </div>
 
                     <div id="destinosContainer" class="space-y-2">
-                        {{-- linha inicial criada via JS, mas deixo um fallback --}}
+                        
                         <div class="flex gap-2 destino-row">
                             <input
                                 type="text"
@@ -126,7 +124,7 @@
                 <p id="rotaStatus" class="text-[11px] text-slate-400"></p>
             </form>
 
-            {{-- Lista visual dos waypoints na ordem calculada --}}
+            
             <div id="listaWaypoints" class="mt-2 hidden">
                 <p class="text-[11px] font-medium text-slate-500 mb-1">
                     Ordem dos pontos da rota:
@@ -135,7 +133,7 @@
             </div>
         </section>
 
-        {{-- RF05 – RASTREAR COLETAS EM TEMPO REAL --}}
+        
         <section class="bg-white rounded-xl shadow-sm border border-slate-100 p-4 space-y-3">
             <header class="flex items-center justify-between">
                 <div>
@@ -158,6 +156,10 @@
                     placeholder="Ex.: 12"
                     class="w-full rounded-lg border-slate-200 text-sm shadow-sm focus:border-entrego-blue focus:ring-entrego-blue"
                 >
+                <!-- <p class="text-[11px] text-slate-400">
+                    Esse ID deve corresponder ao <code>rota_id</code> usado no backend
+                    ao salvar em <code>Rastreamento::create()</code>.
+                </p> -->
             </div>
 
             <div class="flex items-center gap-2">
@@ -191,7 +193,7 @@
             </div>
         </section>
 
-        {{-- RF07 – AGENDAR COLETAS --}}
+        
         <section class="bg-white rounded-xl shadow-sm border border-slate-100 p-4 space-y-3">
             <header>
                 <h2 class="text-sm font-semibold text-slate-800">
@@ -202,14 +204,14 @@
                 </p>
             </header>
 
-            {{-- Ajuste a rota abaixo para o seu controller de Pedido (ex.: pedidos.store) --}}
+            
             <form
     method="POST"
-    action="{{ route('pedidos.store') }}"
+    action="<?php echo e(route('pedidos.store')); ?>"
     class="space-y-3"
 >
 
-                @csrf
+                <?php echo csrf_field(); ?>
 
                 <div class="space-y-1">
                     <label class="text-xs font-medium text-slate-600">
@@ -299,19 +301,19 @@
         </section>
     </div>
 </section>
-@endsection
-@push('scripts')
-    {{-- Google Maps JS --}}
-    <script src="https://maps.googleapis.com/maps/api/js?key={{ config('services.google.maps_key') }}&libraries=places,geometry"></script>
+<?php $__env->stopSection(); ?>
+<?php $__env->startPush('scripts'); ?>
+    
+    <script src="https://maps.googleapis.com/maps/api/js?key=<?php echo e(config('services.google.maps_key')); ?>&libraries=places,geometry"></script>
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {          
             const dadosIniciais = {
-                origem: {!! json_encode($origem ?? null) !!},
-                destino: {!! json_encode($destino ?? null) !!},
-                posicaoAtual: {!! json_encode($posicaoAtual ?? null) !!},
-                rotaUrl: "{{ route('tracking.otimizar') }}",
-                csrfToken: "{{ csrf_token() }}"
+                origem: <?php echo json_encode($origem ?? null); ?>,
+                destino: <?php echo json_encode($destino ?? null); ?>,
+                posicaoAtual: <?php echo json_encode($posicaoAtual ?? null); ?>,
+                rotaUrl: "<?php echo e(route('tracking.otimizar')); ?>",
+                csrfToken: "<?php echo e(csrf_token()); ?>"
             };
 
             let map;
@@ -526,4 +528,5 @@
             }
         });
     </script>
-@endpush
+<?php $__env->stopPush(); ?>
+<?php echo $__env->make('layouts.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\Users\rafae\Documents\entreGO-dev\resources\views/tracking.blade.php ENDPATH**/ ?>

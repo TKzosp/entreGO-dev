@@ -12,7 +12,7 @@ class RegisteredUserController extends Controller
 {
     public function create()
     {
-        return view('auth.register'); // seu formulário de cadastro
+        return view('auth.register'); 
     }
 
     public function store(Request $request)
@@ -30,11 +30,9 @@ class RegisteredUserController extends Controller
         'tipo' => $request->tipo ?? 'cliente',
         'ativo' => true,
     ]);
-
-// // Login automático (opcional, remova se quiser que o usuário vá manualmente para o login)
-// Auth::login($usuario);
+Auth::login($usuario);
 
 return redirect('/login')->with('success', 'Cadastro realizado com sucesso! Faça o login.');
-// dd($usuario);
+dd($usuario);
     }
 }
