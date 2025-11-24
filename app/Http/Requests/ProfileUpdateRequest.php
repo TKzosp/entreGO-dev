@@ -2,7 +2,7 @@
 
 namespace App\Http\Requests;
 
-use App\Models\Usuario;
+use App\Models\Usuario; // Importa o model correto
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -15,15 +15,21 @@ class ProfileUpdateRequest extends FormRequest
      */
     public function rules(): array
     {
+        // Pegamos o ID do usuário logado para ignorá-lo na verificação de email único
+        $userId = $this->user()->id;
+
         return [
-            'name' => ['required', 'string', 'max:255'],
+            // Alterado de 'name' para 'nome' para bater com o BD e o input do formulário
+            'nome' => ['required', 'string', 'max:255'],
+            
             'email' => [
                 'required',
                 'string',
                 'lowercase',
                 'email',
                 'max:255',
-                Rule::unique(User::class)->ignore($this->user()->id),
+                // Correção Crítica: Usar Usuario::class em vez de User::class
+                Rule::unique(Usuario::class)->ignore($userId),
             ],
         ];
     }

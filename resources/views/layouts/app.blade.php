@@ -45,5 +45,6 @@
     <main class="flex-grow pt-20">
         @yield('content')
     </main>
+    @stack('scripts')
 </body>
 </html>

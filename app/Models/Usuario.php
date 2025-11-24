@@ -26,7 +26,7 @@ class Usuario extends Authenticatable
     ];
 
     // Ajuste para usar o campo senha corretamente
-    public function getAuthPassword()
+public function getAuthPassword()
     {
         return $this->senha;
     }

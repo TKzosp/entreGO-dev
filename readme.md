@@ -18,8 +18,8 @@
 -   npm run build
 -   php artisan key:generate
 -   php artisan migrate --force
--   php artisan serve
-
+-   php artisan serve \
+Garantir o que .env estaja configurado com o nome do database, user e password
 ---
 
 ### Links Uteis
@@ -51,13 +51,11 @@ Para instalar os pré-requisitos: https://laravel.com/docs/12.x/installation#ins
     -   Banco de dados entregas
         -   diagramação do banco
             -   definição de tabelas e colunas
-        -   definição de qual banco utilizar (Postgrees? mysql? mongoDB?)
 
 # Membros do grupo
 
 Antonio Pedro 815711-9\
 Gustavo Henrik 815955-9\
-Igor Garcia 815779-1\
 Rafael Cena 816013-5\
 Ryan Serato Costa 812321-8\
 Thales Tukaze 816085-2\
