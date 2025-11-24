@@ -29,6 +29,22 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/tracking', fn() => view('tracking'))->name('tracking');
     Route::get('/registration', fn() => view('registration'))->name('registration');
     Route::get('/profile', fn() => view('profile'))->name('profile');
+    // MOCK para a questão 3: Agendamento de Coleta
+    Route::get('/schedule', fn() => view('schedule'))->name('schedule');
 });
+
+// ROTA PARA EXIBIR A PÁGINA DE AGENDAMENTO
+Route::get('/agendamento/criar', function () {
+    // Apenas retorna a view que criamos anteriormente
+    return view('scheduling.create');
+})->middleware(['auth'])->name('schedule.create');
+
+// ROTA PARA PROCESSAR O ENVIO DO FORMULÁRIO (AÇÃO DE AGENDAR)
+Route::post('/agendamento', function () {
+    return redirect()->route('dashboard')->with('success', 'Coleta agendada com sucesso!');
+})->middleware(['auth'])->name('schedule.store');
+
+
+require __DIR__.'/auth.php';
 
 require __DIR__.'/auth.php';
