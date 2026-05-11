@@ -57,10 +57,11 @@ Crie o banco `entrego_db` no MySQL antes de continuar:
 CREATE DATABASE entrego_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 ```
 
-Depois rode as migrações:
+Depois rode as migrações e os seeders:
 
 ```bash
 php artisan migrate
+php artisan db:seed
 ```
 
 ### 5. Compilar os assets e subir o servidor
@@ -116,15 +117,107 @@ Acesse em: **http://localhost:8000**
 
 ---
 
+## Testes Automatizados
+
+O projeto conta com **46 testes PHPUnit** (17 unitários + 29 de feature) que rodam em SQLite in-memory e cobrem autenticação, rotas protegidas e relacionamentos Eloquent.
+
+Para executar:
+
+```bash
+php artisan test
+```
+
+Resultado esperado: `46 tests, 78 assertions` — todos passando.
+
+### Exemplos de testes implementados
+
+**1. Login com credenciais válidas redireciona para o dashboard**
+```php
+// tests/Feature/AuthTest.php
+public function test_login_with_valid_credentials_redirects_to_dashboard(): void
+{
+    $usuario = $this->criarUsuario(['senha' => Hash::make('senha123')]);
+
+    $this->post('/login', ['email' => $usuario->email, 'password' => 'senha123'])
+         ->assertRedirect('/');
+
+    $this->assertAuthenticatedAs($usuario);
+}
+```
+
+**2. Rotas protegidas redirecionam usuário não autenticado**
+```php
+// tests/Feature/AuthTest.php
+public function test_dashboard_redirects_unauthenticated_user(): void
+{
+    $this->get('/')->assertRedirect('/login');
+}
+
+public function test_tracking_redirects_unauthenticated_user(): void
+{
+    $this->get('/tracking')->assertRedirect('/login');
+}
+```
+
+**3. Relacionamento `hasOne` entre Pedido e Rota**
+```php
+// tests/Unit/ModelRelationshipsTest.php
+public function test_pedido_has_one_rota(): void
+{
+    [$pedido] = $this->criarPedidoComRota();
+
+    $this->assertInstanceOf(HasOne::class, $pedido->rota());
+    $this->assertNotNull($pedido->rota);
+}
+```
+
+**4. Rastreamento é salvo e recuperado via relacionamento**
+```php
+// tests/Unit/ModelRelationshipsTest.php
+public function test_rota_has_many_rastreamentos(): void
+{
+    [, $rota] = $this->criarPedidoComRota();
+
+    Rastreamento::create([
+        'rota_id'   => $rota->id,
+        'latitude'  => -23.5613,
+        'longitude' => -46.6565,
+        'data_hora' => now(),
+    ]);
+
+    $this->assertInstanceOf(HasMany::class, $rota->rastreamentos());
+    $this->assertCount(1, $rota->rastreamentos);
+}
+```
+
+**5. Cadastro de usuário persiste no banco e redireciona corretamente**
+```php
+// tests/Feature/AuthTest.php
+public function test_register_creates_user_and_redirects_to_login(): void
+{
+    $this->post('/register', [
+        'nome'               => 'Novo Usuário',
+        'email'              => 'novo@entrego.com',
+        'senha'              => 'senha123',
+        'senha_confirmation' => 'senha123',
+    ])->assertRedirect('/login');
+
+    $this->assertDatabaseHas('usuarios', ['email' => 'novo@entrego.com']);
+}
+```
+
+---
+
 ## To Do — Próximas Implementações
 
 As tarefas estão ordenadas por prioridade. As de cima desbloqueiam as de baixo.
 
-### Prioridade 1 — Fundação do banco de dados *(bloqueia tudo)*
+### Prioridade 1 — Fundação do banco de dados ✅ *Concluída*
 
-- [ ] Criar migrations Laravel para as tabelas de domínio: `pedidos`, `rotas`, `veiculos`, `enderecos`, `rastreamento`
-- [ ] Criar models Eloquent correspondentes com relacionamentos
-- [ ] Criar seeders com dados de teste realistas
+- [x] Migrations para as tabelas de domínio: `pedidos`, `rotas`, `veiculos`, `enderecos`, `rastreamento`
+- [x] Models Eloquent com todos os relacionamentos (`Veiculo`, `Endereco`, `Pedido`, `Rota`, `Rastreamento`)
+- [x] Seeder com dados realistas: 4 motoristas, 1 cliente, 14 pedidos, 14 rotas, 12 posições de rastreamento
+- [x] Suite de 46 testes automatizados (PHPUnit) — todos passando
 
 ### Prioridade 2 — Conectar UI ao banco real
 
@@ -149,7 +242,6 @@ As tarefas estão ordenadas por prioridade. As de cima desbloqueiam as de baixo.
 
 ## O que está a mais (não exigido pelo relatório)
 
-- `resources/views/demo.blade.php` — página de demonstração, pode ser removida
 - Sistema duplo de layouts (`layouts/` + `components/layouts/`) — gerado pelo Livewire; o projeto usa `layouts/`
 - Componentes Livewire de auth (`livewire/auth/`) — duplicam a auth padrão já funcional
 
