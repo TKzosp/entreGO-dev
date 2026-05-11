@@ -14,7 +14,7 @@ Plataforma web para gerenciamento de rotas, coletas e desempenho de entregas, de
 | NPM        | 9.x           |
 | MySQL      | 8.0           |
 
-> Guia de instalação completo: https://laravel.com/docs/12.x/installation#installing-php
+> Guia completo de instalação do PHP/Laravel: https://laravel.com/docs/12.x/installation
 
 ---
 
@@ -31,13 +31,11 @@ npm install
 
 ### 2. Configurar o ambiente
 
-Copie o arquivo de exemplo e ajuste as credenciais do banco:
-
 ```bash
 cp .env.example .env
 ```
 
-Edite o `.env` com os dados do seu MySQL:
+Abra o `.env` e ajuste as credenciais do MySQL:
 
 ```env
 DB_DATABASE=entrego_db
@@ -45,16 +43,27 @@ DB_USERNAME=root
 DB_PASSWORD=sua_senha
 ```
 
-### 3. Gerar chave e migrar o banco
+### 3. Gerar a chave da aplicação
 
 ```bash
 php artisan key:generate
+```
+
+### 4. Criar o banco e rodar as migrações
+
+Crie o banco `entrego_db` no MySQL antes de continuar:
+
+```sql
+CREATE DATABASE entrego_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+```
+
+Depois rode as migrações:
+
+```bash
 php artisan migrate
 ```
 
-> Certifique-se de que o banco `entrego_db` já foi criado no MySQL antes de rodar o migrate.
-
-### 4. Compilar os assets e subir o servidor
+### 5. Compilar os assets e subir o servidor
 
 ```bash
 npm run build
@@ -69,45 +78,80 @@ Acesse em: **http://localhost:8000**
 
 ## Rotas disponíveis
 
-| Rota        | Descrição                         |
-|-------------|-----------------------------------|
-| `/login`    | Tela de login                     |
-| `/register` | Cadastro de novo usuário          |
-| `/`         | Dashboard de desempenho           |
-| `/dashboard`| Dashboard de desempenho (alias)   |
-| `/tracking` | Tela de rastreamento de rotas     |
-| `/profile`  | Dados do usuário logado           |
+| Rota                  | Descrição                                    |
+|-----------------------|----------------------------------------------|
+| `/login`              | Tela de login                                |
+| `/register`           | Cadastro de novo usuário                     |
+| `/`                   | Dashboard de desempenho (alias de /dashboard)|
+| `/dashboard`          | Dashboard com KPIs, gráficos e filtros       |
+| `/tracking`           | Rastreamento de rotas com Google Maps        |
+| `/profile`            | Dados e configurações do usuário logado      |
+| `/registration`       | Formulário de cadastro de pedido             |
+| `/pedidos`            | Listagem de pedidos                          |
+| `/assinaturas`        | Planos de assinatura disponíveis             |
+| `/minha-assinatura`   | Assinatura ativa do usuário                  |
+| `/faq`                | Perguntas frequentes (suporte)               |
+| `/contato`            | Formulário de contato                        |
+| `/meus-chamados`      | Histórico de chamados de suporte             |
 
 ---
 
-## To Do
+## Status das Funcionalidades (RF)
 
-### Front-end
+> Legenda: ✅ Pronto | 🔶 Parcial (UI existe, backend mock ou incompleto) | ❌ Não implementado
 
-- [x] Layout base autenticado (`layouts/app.blade.php`)
-- [x] Layout guest para login/cadastro (`layouts/guest.blade.php`)
-- [x] Tela de login
-- [x] Tela de cadastro
-- [x] Dashboard com cards de KPI (eficiência, coletas, tempo médio, falhas)
-- [x] Gráficos de desempenho (tempo de entrega, coletas por veículo, falhas por tipo)
-- [x] Filtros de período e categoria de veículo no dashboard
-- [x] Tabela de detalhamento por rota
+| RF    | Requisito                              | Status | Observação                                                        |
+|-------|----------------------------------------|--------|-------------------------------------------------------------------|
+| RF01  | Autenticação (login/logout)            | ✅     | Guard customizado, model `Usuario` com campo `senha`              |
+| RF02  | Cadastro de usuários                   | ✅     | Validação completa, hash bcrypt                                   |
+| RF03  | Planos de assinatura                   | ✅     | Views e controller implementados (`/assinaturas`)                 |
+| RF04  | Rastreamento de rotas                  | 🔶     | View com Google Maps existe; não conectado a dados reais do banco |
+| RF05  | Dashboard de desempenho                | 🔶     | UI completa com filtros funcionais; dados são mock                |
+| RF06  | Notificações (e-mail/SMS ao cliente)   | ❌     | Não implementado                                                  |
+| RF07  | Agendamento de coletas                 | 🔶     | View de criação existe; fluxo backend não validado                |
+| RF08  | Cadastro de pedidos                    | 🔶     | View e controller existem; persistência no banco não testada      |
+| RF09  | Gestão de rotas                        | 🔶     | Dados de rota no dashboard são mock; sem CRUD de rotas            |
+| RF10  | Waypoints de rota                      | ✅     | CRUD completo via `WaypointController`                            |
+| RF11  | Suporte (FAQ, contato, chamados)       | ✅     | Três views e `SupportController` implementados                    |
+
+---
+
+## To Do — Próximas Implementações
+
+As tarefas estão ordenadas por prioridade. As de cima desbloqueiam as de baixo.
+
+### Prioridade 1 — Fundação do banco de dados *(bloqueia tudo)*
+
+- [ ] Criar migrations Laravel para as tabelas de domínio: `pedidos`, `rotas`, `veiculos`, `enderecos`, `rastreamento`
+- [ ] Criar models Eloquent correspondentes com relacionamentos
+- [ ] Criar seeders com dados de teste realistas
+
+### Prioridade 2 — Conectar UI ao banco real
+
+- [ ] Dashboard: substituir dados mock por queries reais (coletas, eficiência, falhas por período e veículo)
+- [ ] Cadastro de pedidos (`/registration`): validar persistência no banco e redirecionar corretamente
+- [ ] Rastreamento (`/tracking`): carregar rotas e posições reais da tabela `rastreamento`
+
+### Prioridade 3 — Funcionalidades de gestão
+
+- [ ] Página de gestão de rotas (CRUD completo)
 - [ ] Página de histórico de entregas realizadas
-- [ ] Página de motoristas
-- [ ] Página de gestão de usuários
-- [ ] Formulário de nova entrega
-- [ ] Página de cadastro de entrega
-- [ ] Página de rastreamento em tempo real
+- [ ] Página de motoristas (listagem e detalhes)
+- [ ] Agendamento de coletas: completar backend e validar fluxo de ponta a ponta
 
-### Back-end
+### Prioridade 4 — Funcionalidades avançadas
 
-- [x] Autenticação com guard customizado (`Usuario` model, campo `senha`)
-- [x] Cadastro de usuários com validação
-- [x] Migrações: `usuarios`, `remember_token`, `jobs`/`failed_jobs`
-- [ ] API de banco de dados de entregas
-- [ ] Diagramação e criação das tabelas de entregas
-- [ ] Integração com API de rastreamento
+- [ ] RF06: Envio de notificações por e-mail ao cliente (confirmação de coleta, status de entrega)
+- [ ] Página de gestão de usuários (admin)
 - [ ] Login com OAuth (Google / GitHub)
+
+---
+
+## O que está a mais (não exigido pelo relatório)
+
+- `resources/views/demo.blade.php` — página de demonstração, pode ser removida
+- Sistema duplo de layouts (`layouts/` + `components/layouts/`) — gerado pelo Livewire; o projeto usa `layouts/`
+- Componentes Livewire de auth (`livewire/auth/`) — duplicam a auth padrão já funcional
 
 ---
 
