@@ -45,4 +45,24 @@ class Usuario extends Authenticatable
             ->where('status', 'ativa')
             ->latest('id');
     }
+
+    public function veiculos()
+    {
+        return $this->hasMany(Veiculo::class, 'usuario_id');
+    }
+
+    public function enderecos()
+    {
+        return $this->hasMany(Endereco::class, 'usuario_id');
+    }
+
+    public function pedidos()
+    {
+        return $this->hasMany(Pedido::class, 'cliente_id');
+    }
+
+    public function rotasComoMotorista()
+    {
+        return $this->hasMany(Rota::class, 'motorista_id');
+    }
 }

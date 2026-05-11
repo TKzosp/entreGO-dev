@@ -13,6 +13,8 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
+        $this->call(DomainSeeder::class);
+
         Usuario::firstOrCreate(
             ['email' => 'teste@entrego.com'],
             [
