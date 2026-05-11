@@ -94,6 +94,7 @@ Route::middleware(['auth'])->group(function () {
     // PEDIDOS
     // =========================================================
     Route::get('/registration', [PedidoController::class, 'create'])->name('registration');
+    Route::get('/pedidos', [PedidoController::class, 'index'])->name('pedidos.index');
     Route::post('/pedidos', [PedidoController::class, 'store'])->name('pedidos.store');
 
 

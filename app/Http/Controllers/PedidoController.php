@@ -9,6 +9,16 @@ use App\Models\Pedido;
 
 class PedidoController extends Controller
 {
+    public function index()
+    {
+        $pedidos = Pedido::with(['enderecoColeta', 'enderecoEntrega', 'rota'])
+            ->where('cliente_id', Auth::id())
+            ->orderByDesc('data_coleta')
+            ->paginate(10);
+
+        return view('pedidos.index', compact('pedidos'));
+    }
+
     public function create()
     {
         return view('registration');

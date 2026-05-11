@@ -88,7 +88,7 @@ Acesse em: **http://localhost:8000**
 | `/tracking`           | Rastreamento de rotas com Google Maps        |
 | `/profile`            | Dados e configurações do usuário logado      |
 | `/registration`       | Formulário de cadastro de pedido             |
-| `/pedidos`            | Listagem de pedidos                          |
+| `/pedidos`            | Histórico de pedidos do usuário autenticado  |
 | `/assinaturas`        | Planos de assinatura disponíveis             |
 | `/minha-assinatura`   | Assinatura ativa do usuário                  |
 | `/faq`                | Perguntas frequentes (suporte)               |
@@ -119,7 +119,7 @@ Acesse em: **http://localhost:8000**
 
 ## Testes Automatizados
 
-O projeto conta com **53 testes PHPUnit** (17 unitários + 36 de feature) que rodam em SQLite in-memory e cobrem autenticação, rotas protegidas, relacionamentos Eloquent e fluxo completo de pedidos.
+O projeto conta com **57 testes PHPUnit** (17 unitários + 40 de feature) que rodam em SQLite in-memory e cobrem autenticação, rotas protegidas, relacionamentos Eloquent, fluxo completo de pedidos e histórico de entregas.
 
 Para executar:
 
@@ -127,7 +127,7 @@ Para executar:
 php artisan test
 ```
 
-Resultado esperado: `53 tests, 96 assertions` — todos passando.
+Resultado esperado: `57 tests, 103 assertions` — todos passando.
 
 ### Exemplos de testes implementados
 
@@ -228,7 +228,7 @@ As tarefas estão ordenadas por prioridade. As de cima desbloqueiam as de baixo.
 ### Prioridade 3 — Funcionalidades de gestão
 
 - [ ] Página de gestão de rotas (CRUD completo)
-- [ ] Página de histórico de entregas realizadas
+- [x] Página de histórico de entregas realizadas (`/pedidos`): tabela paginada com status colorido, isolamento por usuário
 - [ ] Página de motoristas (listagem e detalhes)
 - [ ] Agendamento de coletas: completar backend e validar fluxo de ponta a ponta
 

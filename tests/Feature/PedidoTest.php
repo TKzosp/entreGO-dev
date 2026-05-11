@@ -106,4 +106,41 @@ class PedidoTest extends TestCase
         $this->post('/pedidos', $this->dadosValidos())
              ->assertRedirect('/login');
     }
+
+    // ── Histórico de pedidos ──────────────────────────────────────────────────
+
+    public function test_pedidos_index_loads_for_authenticated_user(): void
+    {
+        $this->actingAs($this->criarUsuario())
+             ->get('/pedidos')
+             ->assertStatus(200)
+             ->assertSee('Meus Pedidos');
+    }
+
+    public function test_pedidos_index_redirects_unauthenticated_user(): void
+    {
+        $this->get('/pedidos')->assertRedirect('/login');
+    }
+
+    public function test_pedidos_index_shows_only_own_pedidos(): void
+    {
+        $usuarioA = $this->criarUsuario(['email' => 'a@test.com']);
+        $usuarioB = $this->criarUsuario(['email' => 'b@test.com']);
+
+        $this->actingAs($usuarioA)->post('/pedidos', $this->dadosValidos());
+        $this->actingAs($usuarioB)->post('/pedidos', $this->dadosValidos());
+
+        $response = $this->actingAs($usuarioA)->get('/pedidos');
+        $response->assertStatus(200);
+
+        $pedidosVisiveis = $response->viewData('pedidos');
+        $this->assertTrue($pedidosVisiveis->every(fn($p) => $p->cliente_id === $usuarioA->id));
+    }
+
+    public function test_pedidos_index_shows_empty_state_when_no_pedidos(): void
+    {
+        $this->actingAs($this->criarUsuario())
+             ->get('/pedidos')
+             ->assertSee('Nenhum pedido encontrado');
+    }
 }
