@@ -3,6 +3,9 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
+use App\Models\Pedido;
+use App\Models\Rota;
 
 class DashboardController extends Controller
 {
@@ -11,139 +14,197 @@ class DashboardController extends Controller
         $periodo    = $request->input('periodo', '30d');
         $catVeiculo = $request->input('categoria_veiculo', 'todos');
 
-        $todasRotas = [
-            ['nome' => 'Rota Centro',           'veiculo' => 'Moto',            'veiculo_key' => 'moto',            'coletas' => 42, 'tempo_medio' => '28 min', 'eficiencia' => 94.2, 'falhas' => 0],
-            ['nome' => 'Rota Vila Mariana',      'veiculo' => 'Moto',            'veiculo_key' => 'moto',            'coletas' => 38, 'tempo_medio' => '25 min', 'eficiencia' => 96.1, 'falhas' => 0],
-            ['nome' => 'Rota Pinheiros',         'veiculo' => 'Carro',           'veiculo_key' => 'carro',           'coletas' => 35, 'tempo_medio' => '33 min', 'eficiencia' => 90.8, 'falhas' => 0],
-            ['nome' => 'Rota Zona Norte',        'veiculo' => 'Carro',           'veiculo_key' => 'carro',           'coletas' => 33, 'tempo_medio' => '36 min', 'eficiencia' => 91.5, 'falhas' => 1],
-            ['nome' => 'Rota Zona Sul',          'veiculo' => 'Moto',            'veiculo_key' => 'moto',            'coletas' => 32, 'tempo_medio' => '31 min', 'eficiencia' => 89.7, 'falhas' => 0],
-            ['nome' => 'Rota Osasco',            'veiculo' => 'Carro',           'veiculo_key' => 'carro',           'coletas' => 30, 'tempo_medio' => '41 min', 'eficiencia' => 85.0, 'falhas' => 0],
-            ['nome' => 'Rota Zona Oeste',        'veiculo' => 'Carro',           'veiculo_key' => 'carro',           'coletas' => 29, 'tempo_medio' => '39 min', 'eficiencia' => 87.9, 'falhas' => 1],
-            ['nome' => 'Rota Zona Leste',        'veiculo' => 'Caminhão leve',   'veiculo_key' => 'caminhao_leve',   'coletas' => 27, 'tempo_medio' => '48 min', 'eficiencia' => 86.2, 'falhas' => 2],
-            ['nome' => 'Rota Santo André',       'veiculo' => 'Caminhão leve',   'veiculo_key' => 'caminhao_leve',   'coletas' => 22, 'tempo_medio' => '52 min', 'eficiencia' => 83.4, 'falhas' => 2],
-            ['nome' => 'Rota São Bernardo',      'veiculo' => 'Caminhão leve',   'veiculo_key' => 'caminhao_leve',   'coletas' => 19, 'tempo_medio' => '55 min', 'eficiencia' => 79.6, 'falhas' => 1],
-            ['nome' => 'Rota Guarulhos',         'veiculo' => 'Caminhão pesado', 'veiculo_key' => 'caminhao_pesado', 'coletas' => 17, 'tempo_medio' => '67 min', 'eficiencia' => 76.3, 'falhas' => 1],
-            ['nome' => 'Rota Campinas Express',  'veiculo' => 'Caminhão pesado', 'veiculo_key' => 'caminhao_pesado', 'coletas' => 23, 'tempo_medio' => '78 min', 'eficiencia' => 68.5, 'falhas' => 0],
-        ];
+        $dataInicio   = $this->dataInicio($periodo);
+        $tiposVeiculo = $this->tiposVeiculo($catVeiculo);
 
-        $rotas = $catVeiculo === 'todos'
-            ? $todasRotas
-            : array_values(array_filter($todasRotas, fn($r) => $r['veiculo_key'] === $catVeiculo));
+        // Carrega todas as rotas do período com relacionamentos necessários
+        $todasRotas = Rota::with(['veiculo', 'pedido', 'motorista'])
+            ->whereHas('veiculo', fn($q) => $q->whereIn('tipo', $tiposVeiculo))
+            ->whereHas('pedido', fn($q) => $q->where('data_coleta', '>=', $dataInicio))
+            ->get();
 
-        $mult = ['7d' => 0.23, '30d' => 1.0, 'mes_atual' => 0.33, '90d' => 3.0][$periodo] ?? 1.0;
+        // Agrupa por motorista para montar a tabela de desempenho
+        $rotas = $todasRotas
+            ->groupBy('motorista_id')
+            ->map(function ($grupo) {
+                $primeira  = $grupo->first();
+                $motorista = $primeira->motorista;
+                $veiculo   = $primeira->veiculo;
 
-        $rotasEscaladas = array_map(fn($r) => array_merge($r, [
-            'coletas' => max(1, (int) round($r['coletas'] * $mult)),
-            'falhas'  => (int) round($r['falhas'] * $mult),
-        ]), $rotas);
+                $total      = $grupo->count();
+                $entregues  = $grupo->filter(fn($r) => optional($r->pedido)->status === 'entregue')->count();
+                $cancelados = $grupo->filter(fn($r) => optional($r->pedido)->status === 'cancelado')->count();
+                $eficiencia = $total > 0 ? round(($entregues / $total) * 100, 1) : 0.0;
 
-        $totalColetas   = array_sum(array_column($rotasEscaladas, 'coletas'));
-        $totalFalhas    = array_sum(array_column($rotasEscaladas, 'falhas'));
-        $eficienciaMedia = count($rotasEscaladas)
-            ? round(array_sum(array_column($rotasEscaladas, 'eficiencia')) / count($rotasEscaladas), 1)
-            : 0.0;
+                $tempos = $grupo
+                    ->filter(fn($r) => optional($r->pedido)->status === 'entregue' && $r->data_fim && optional($r->pedido)->data_coleta)
+                    ->map(fn($r) => $r->pedido->data_coleta->diffInMinutes($r->data_fim));
 
-        $tempoMedio = match ($catVeiculo) {
-            'moto'            => '27 min',
-            'carro'           => '37 min',
-            'caminhao_leve'   => '52 min',
-            'caminhao_pesado' => '73 min',
-            default           => '34 min',
-        };
+                $tempoMedio = $tempos->count() > 0 ? round($tempos->average()) . ' min' : '—';
 
-        $eficienciaDelta = match ($periodo) {
-            '7d'       => '+1,2% em relação à semana anterior',
-            'mes_atual'=> '+2,1% em relação ao mês anterior',
-            '90d'      => '+5,8% em relação ao trimestre anterior',
-            default    => '+3,7% em relação ao período anterior',
-        };
+                $tipoLabel = ['moto' => 'Moto', 'carro' => 'Carro', 'caminhao' => 'Caminhão', 'van' => 'Van'];
 
-        $seriesTempoEntrega = match ($periodo) {
-            '7d' => [
-                'labels' => ['04/05','05/05','06/05','07/05','08/05','09/05','10/05'],
-                'values' => [35, 33, 31, 34, 32, 30, 31],
-            ],
-            'mes_atual' => [
-                'labels' => ['01/05','02/05','03/05','04/05','05/05','06/05','07/05','08/05','09/05','10/05'],
-                'values' => [36, 34, 32, 35, 33, 31, 34, 32, 31, 32],
-            ],
-            '90d' => [
-                'labels' => ['Sem 1','Sem 2','Sem 3','Sem 4','Sem 5','Sem 6','Sem 7','Sem 8','Sem 9','Sem 10','Sem 11','Sem 12','Sem 13'],
-                'values' => [45, 44, 43, 41, 42, 40, 39, 38, 40, 37, 36, 35, 34],
-            ],
-            default => [
-                'labels' => [
-                    '11/04','12/04','13/04','14/04','15/04','16/04','17/04','18/04','19/04','20/04',
-                    '21/04','22/04','23/04','24/04','25/04','26/04','27/04','28/04','29/04','30/04',
-                    '01/05','02/05','03/05','04/05','05/05','06/05','07/05','08/05','09/05','10/05',
-                ],
-                'values' => [42, 40, 38, 41, 39, 37, 43, 40, 36, 38, 35, 37, 39, 34, 36, 33, 38, 35, 32, 34, 36, 33, 31, 35, 32, 30, 33, 34, 31, 32],
-            ],
-        };
+                return [
+                    'nome'       => $motorista->nome ?? '—',
+                    'veiculo'    => ($tipoLabel[$veiculo->tipo ?? ''] ?? ($veiculo->tipo ?? '—')),
+                    'veiculo_key'=> $veiculo->tipo ?? '',
+                    'coletas'    => $total,
+                    'tempo_medio'=> $tempoMedio,
+                    'eficiencia' => $eficiencia,
+                    'falhas'     => $cancelados,
+                ];
+            })
+            ->sortByDesc('coletas')
+            ->values()
+            ->toArray();
 
-        if ($catVeiculo !== 'todos') {
-            $fatorTempo = match ($catVeiculo) {
-                'moto'            => 0.80,
-                'carro'           => 1.09,
-                'caminhao_leve'   => 1.53,
-                'caminhao_pesado' => 2.15,
-                default           => 1.0,
-            };
-            $seriesTempoEntrega['values'] = array_map(fn($v) => (int) round($v * $fatorTempo), $seriesTempoEntrega['values']);
-        }
+        // KPIs
+        $pedidosNoPeriodo = Pedido::where('data_coleta', '>=', $dataInicio)
+            ->whereHas('rota', fn($q) => $q->whereHas('veiculo', fn($v) => $v->whereIn('tipo', $tiposVeiculo)))
+            ->get();
 
-        $baseColetas = match ($periodo) {
-            '7d'       => [26, 30, 15, 9],
-            'mes_atual'=> [36, 43, 13, 6],
-            '90d'      => [336, 387, 198, 103],
-            default    => [112, 129, 66, 40],
-        };
+        $totalColetas    = $pedidosNoPeriodo->whereIn('status', ['coletado', 'transito', 'entregue'])->count();
+        $totalFalhas     = $pedidosNoPeriodo->where('status', 'cancelado')->count();
+        $eficienciaMedia = count($rotas) > 0 ? round(collect($rotas)->avg('eficiencia'), 1) : 0.0;
 
-        if ($catVeiculo === 'todos') {
-            $seriesColetasVeiculo = [
-                'labels' => ['Moto', 'Carro', 'Caminhão leve', 'Caminhão pesado'],
-                'values' => $baseColetas,
-            ];
-        } else {
-            $idx = ['moto' => 0, 'carro' => 1, 'caminhao_leve' => 2, 'caminhao_pesado' => 3];
-            $label = ['moto' => 'Moto', 'carro' => 'Carro', 'caminhao_leve' => 'Caminhão leve', 'caminhao_pesado' => 'Caminhão pesado'];
-            $seriesColetasVeiculo = [
-                'labels' => [$label[$catVeiculo]],
-                'values' => [$baseColetas[$idx[$catVeiculo]]],
-            ];
-        }
-
-        $baseFalhas = match ($periodo) {
-            '7d'       => [1, 0, 1, 0],
-            'mes_atual'=> [1, 1, 1, 0],
-            '90d'      => [9, 7, 5, 3],
-            default    => [3, 2, 2, 1],
-        };
-
-        $seriesFalhasTipo = [
-            'labels' => ['Endereço não encontrado', 'Destinatário ausente', 'Atraso na coleta', 'Produto danificado'],
-            'values' => $baseFalhas,
-        ];
+        $temposMins = collect($rotas)
+            ->filter(fn($r) => $r['tempo_medio'] !== '—')
+            ->map(fn($r) => (int) str_replace(' min', '', $r['tempo_medio']));
+        $tempoMedioGeral = $temposMins->count() > 0 ? $temposMins->avg() . ' min' : '—';
 
         return view('dashboard', [
             'resumo' => [
                 'eficiencia_rotas'              => $eficienciaMedia,
-                'eficiencia_rotas_texto'        => $eficienciaDelta,
+                'eficiencia_rotas_texto'        => 'Com base nas entregas concluídas no período',
                 'total_coletas'                 => $totalColetas,
                 'total_coletas_texto'           => 'Coletas concluídas no período selecionado',
-                'tempo_medio_entrega_formatado' => $tempoMedio,
+                'tempo_medio_entrega_formatado' => $tempoMedioGeral,
                 'tempo_medio_entrega_texto'     => 'Média entre coleta e entrega no período',
                 'falhas_processuais'            => $totalFalhas,
                 'falhas_processuais_texto'      => $totalFalhas > 0
-                    ? "−" . max(0, $totalFalhas - 1) . " vs. período anterior"
+                    ? "{$totalFalhas} pedido(s) cancelado(s) no período"
                     : 'Nenhuma falha no período',
             ],
-            'rotas'                => $rotasEscaladas,
-            'seriesTempoEntrega'   => $seriesTempoEntrega,
-            'seriesColetasVeiculo' => $seriesColetasVeiculo,
-            'seriesFalhasTipo'     => $seriesFalhasTipo,
+            'rotas'                => $rotas,
+            'seriesTempoEntrega'   => $this->seriesTempoEntrega($dataInicio, $tiposVeiculo, $periodo),
+            'seriesColetasVeiculo' => $this->seriesColetasVeiculo($dataInicio, $tiposVeiculo),
+            'seriesFalhasTipo'     => $this->seriesStatusDistribuicao($dataInicio, $tiposVeiculo),
             'periodoAtual'         => $periodo,
             'categoriaAtual'       => $catVeiculo,
         ]);
+    }
+
+    private function dataInicio(string $periodo): Carbon
+    {
+        return match ($periodo) {
+            '7d'        => now()->subDays(7)->startOfDay(),
+            'mes_atual' => now()->startOfMonth()->startOfDay(),
+            '90d'       => now()->subDays(90)->startOfDay(),
+            default     => now()->subDays(30)->startOfDay(),
+        };
+    }
+
+    private function tiposVeiculo(string $catVeiculo): array
+    {
+        return match ($catVeiculo) {
+            'moto'            => ['moto'],
+            'carro'           => ['carro'],
+            'caminhao_leve'   => ['caminhao'],
+            'caminhao_pesado' => ['van'],
+            default           => ['moto', 'carro', 'caminhao', 'van'],
+        };
+    }
+
+    // Gráfico de linha: tempo médio de entrega por dia ou semana
+    private function seriesTempoEntrega(Carbon $dataInicio, array $tiposVeiculo, string $periodo): array
+    {
+        $registros = Rota::with(['pedido', 'veiculo'])
+            ->whereHas('veiculo', fn($q) => $q->whereIn('tipo', $tiposVeiculo))
+            ->whereHas('pedido', fn($q) => $q->where('status', 'entregue')->where('data_coleta', '>=', $dataInicio))
+            ->whereNotNull('data_fim')
+            ->get()
+            ->map(fn($r) => [
+                'data'  => Carbon::parse($r->data_fim)->format('Y-m-d'),
+                'tempo' => $r->pedido->data_coleta->diffInMinutes($r->data_fim),
+            ]);
+
+        $dias = (int) $dataInicio->diffInDays(now());
+
+        if ($dias <= 31) {
+            $labels = [];
+            $values = [];
+            for ($i = $dias; $i >= 0; $i--) {
+                $labels[] = now()->subDays($i)->format('d/m');
+                $diaKey   = now()->subDays($i)->format('Y-m-d');
+                $pontos   = $registros->filter(fn($r) => $r['data'] === $diaKey);
+                $values[] = $pontos->count() > 0 ? (int) round($pontos->avg('tempo')) : 0;
+            }
+        } else {
+            $semanas = (int) ceil($dias / 7);
+            $labels  = [];
+            $values  = [];
+            for ($i = $semanas - 1; $i >= 0; $i--) {
+                $semInicio = now()->subWeeks($i)->startOfWeek()->format('Y-m-d');
+                $semFim    = now()->subWeeks($i)->endOfWeek()->format('Y-m-d');
+                $labels[]  = 'Sem ' . ($semanas - $i);
+                $pontos    = $registros->filter(fn($r) => $r['data'] >= $semInicio && $r['data'] <= $semFim);
+                $values[]  = $pontos->count() > 0 ? (int) round($pontos->avg('tempo')) : 0;
+            }
+        }
+
+        return compact('labels', 'values');
+    }
+
+    // Gráfico de barras: total de rotas por tipo de veículo
+    private function seriesColetasVeiculo(Carbon $dataInicio, array $tiposVeiculo): array
+    {
+        $labelMap = ['moto' => 'Moto', 'carro' => 'Carro', 'caminhao' => 'Caminhão', 'van' => 'Van'];
+
+        $counts = Rota::selectRaw('veiculos.tipo, COUNT(*) as total')
+            ->join('veiculos', 'rotas.veiculo_id', '=', 'veiculos.id')
+            ->join('pedidos', 'rotas.pedido_id', '=', 'pedidos.id')
+            ->whereIn('veiculos.tipo', $tiposVeiculo)
+            ->where('pedidos.data_coleta', '>=', $dataInicio)
+            ->groupBy('veiculos.tipo')
+            ->pluck('total', 'veiculos.tipo');
+
+        $labels = [];
+        $values = [];
+        foreach ($tiposVeiculo as $tipo) {
+            $labels[] = $labelMap[$tipo] ?? $tipo;
+            $values[] = (int) ($counts[$tipo] ?? 0);
+        }
+
+        return compact('labels', 'values');
+    }
+
+    // Gráfico de rosca: distribuição de status dos pedidos
+    private function seriesStatusDistribuicao(Carbon $dataInicio, array $tiposVeiculo): array
+    {
+        $statusLabels = [
+            'entregue'  => 'Entregue',
+            'transito'  => 'Em trânsito',
+            'coletado'  => 'Coletado',
+            'aceito'    => 'Aceito',
+            'pendente'  => 'Pendente',
+            'cancelado' => 'Cancelado',
+        ];
+
+        $counts = Pedido::selectRaw('status, COUNT(*) as total')
+            ->where('data_coleta', '>=', $dataInicio)
+            ->whereHas('rota', fn($q) => $q->whereHas('veiculo', fn($v) => $v->whereIn('tipo', $tiposVeiculo)))
+            ->groupBy('status')
+            ->pluck('total', 'status');
+
+        $labels = [];
+        $values = [];
+        foreach ($statusLabels as $key => $label) {
+            if (($counts[$key] ?? 0) > 0) {
+                $labels[] = $label;
+                $values[] = (int) $counts[$key];
+            }
+        }
+
+        return compact('labels', 'values');
     }
 }
