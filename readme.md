@@ -106,12 +106,12 @@ Acesse em: **http://localhost:8000**
 | RF01  | Autenticação (login/logout)            | ✅     | Guard customizado, model `Usuario` com campo `senha`              |
 | RF02  | Cadastro de usuários                   | ✅     | Validação completa, hash bcrypt                                   |
 | RF03  | Planos de assinatura                   | ✅     | Views e controller implementados (`/assinaturas`)                 |
-| RF04  | Rastreamento de rotas                  | 🔶     | View com Google Maps existe; não conectado a dados reais do banco |
-| RF05  | Dashboard de desempenho                | 🔶     | UI completa com filtros funcionais; dados são mock                |
+| RF04  | Rastreamento de rotas                  | ✅     | Rota ativa carregada do banco; posição inicial do mapa real       |
+| RF05  | Dashboard de desempenho                | ✅     | Queries reais: KPIs, tabela por motorista, 3 gráficos dinâmicos  |
 | RF06  | Notificações (e-mail/SMS ao cliente)   | ❌     | Não implementado                                                  |
 | RF07  | Agendamento de coletas                 | 🔶     | View de criação existe; fluxo backend não validado                |
-| RF08  | Cadastro de pedidos                    | 🔶     | View e controller existem; persistência no banco não testada      |
-| RF09  | Gestão de rotas                        | 🔶     | Dados de rota no dashboard são mock; sem CRUD de rotas            |
+| RF08  | Cadastro de pedidos                    | ✅     | Formulário completo com persistência real e validação             |
+| RF09  | Gestão de rotas                        | 🔶     | Rotas exibidas no dashboard; sem CRUD dedicado de rotas           |
 | RF10  | Waypoints de rota                      | ✅     | CRUD completo via `WaypointController`                            |
 | RF11  | Suporte (FAQ, contato, chamados)       | ✅     | Três views e `SupportController` implementados                    |
 
@@ -119,7 +119,7 @@ Acesse em: **http://localhost:8000**
 
 ## Testes Automatizados
 
-O projeto conta com **46 testes PHPUnit** (17 unitários + 29 de feature) que rodam em SQLite in-memory e cobrem autenticação, rotas protegidas e relacionamentos Eloquent.
+O projeto conta com **53 testes PHPUnit** (17 unitários + 36 de feature) que rodam em SQLite in-memory e cobrem autenticação, rotas protegidas, relacionamentos Eloquent e fluxo completo de pedidos.
 
 Para executar:
 
@@ -127,7 +127,7 @@ Para executar:
 php artisan test
 ```
 
-Resultado esperado: `46 tests, 78 assertions` — todos passando.
+Resultado esperado: `53 tests, 96 assertions` — todos passando.
 
 ### Exemplos de testes implementados
 
@@ -219,11 +219,11 @@ As tarefas estão ordenadas por prioridade. As de cima desbloqueiam as de baixo.
 - [x] Seeder com dados realistas: 4 motoristas, 1 cliente, 14 pedidos, 14 rotas, 12 posições de rastreamento
 - [x] Suite de 46 testes automatizados (PHPUnit) — todos passando
 
-### Prioridade 2 — Conectar UI ao banco real
+### Prioridade 2 — Conectar UI ao banco real ✅ *Concluída*
 
-- [ ] Dashboard: substituir dados mock por queries reais (coletas, eficiência, falhas por período e veículo)
-- [ ] Cadastro de pedidos (`/registration`): validar persistência no banco e redirecionar corretamente
-- [ ] Rastreamento (`/tracking`): carregar rotas e posições reais da tabela `rastreamento`
+- [x] Dashboard: queries reais com filtros por período e tipo de veículo; KPIs, tabela e 3 gráficos
+- [x] Cadastro de pedidos (`/registration`): formulário completo, validação e persistência no banco
+- [x] Rastreamento (`/tracking`): rota ativa carregada do banco, posição inicial real no mapa
 
 ### Prioridade 3 — Funcionalidades de gestão
 
