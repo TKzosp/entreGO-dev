@@ -109,9 +109,9 @@ Acesse em: **http://localhost:8000**
 | RF04  | Rastreamento de rotas                  | ✅     | Rota ativa carregada do banco; posição inicial do mapa real       |
 | RF05  | Dashboard de desempenho                | ✅     | Queries reais: KPIs, tabela por motorista, 3 gráficos dinâmicos  |
 | RF06  | Notificações (e-mail/SMS ao cliente)   | ❌     | Não implementado                                                  |
-| RF07  | Agendamento de coletas                 | 🔶     | View de criação existe; fluxo backend não validado                |
+| RF07  | Agendamento de coletas                 | ✅     | Atribuição automática de motorista; transições planejada→iniciada→concluida |
 | RF08  | Cadastro de pedidos                    | ✅     | Formulário completo com persistência real e validação             |
-| RF09  | Gestão de rotas                        | 🔶     | Rotas exibidas no dashboard; sem CRUD dedicado de rotas           |
+| RF09  | Gestão de rotas                        | ✅     | Listagem com filtros, detalhe com waypoints/rastreamento, cancelar e reatribuir |
 | RF10  | Waypoints de rota                      | ✅     | CRUD completo via `WaypointController`                            |
 | RF11  | Suporte (FAQ, contato, chamados)       | ✅     | Três views e `SupportController` implementados                    |
 
@@ -119,7 +119,7 @@ Acesse em: **http://localhost:8000**
 
 ## Testes Automatizados
 
-O projeto conta com **57 testes PHPUnit** (17 unitários + 40 de feature) que rodam em SQLite in-memory e cobrem autenticação, rotas protegidas, relacionamentos Eloquent, fluxo completo de pedidos e histórico de entregas.
+O projeto conta com **77 testes PHPUnit** (17 unitários + 60 de feature) que rodam em SQLite in-memory e cobrem autenticação, rotas protegidas, relacionamentos Eloquent, fluxo completo de pedidos, histórico de entregas, motoristas, agendamento ponta a ponta e gestão de rotas.
 
 Para executar:
 
@@ -127,7 +127,7 @@ Para executar:
 php artisan test
 ```
 
-Resultado esperado: `57 tests, 103 assertions` — todos passando.
+Resultado esperado: `77 tests, 148 assertions` — todos passando.
 
 ### Exemplos de testes implementados
 
@@ -222,26 +222,19 @@ Desbloqueia o agendamento: para atribuir uma rota a um motorista, precisamos lis
 | View `/motoristas` — tabela com nome, veículo padrão, total de entregas e eficiência | Baixo |
 | Testes: carregamento, redirecionamento não autenticado, dados corretos | Baixo |
 
-### Prioridade 2 — Agendamento de coletas (RF07) `🔶 Parcial`
+### ~~Prioridade 2 — Agendamento de coletas (RF07)~~ ✅ *Concluída*
 
-A view de criação existe; o backend precisa fechar o fluxo completo.
+- Atribuição automática do motorista com menos rotas ativas ao criar pedido
+- Transições de status `planejada → iniciada → concluida` via botões no tracking
+- Conclusão de rota marca pedido como `entregue` automaticamente
+- 6 testes cobrindo o fluxo ponta a ponta
 
-| Tarefa | Esforço |
-|--------|---------|
-| `PedidoController@store` atribuir automaticamente motorista disponível e criar `Rota` vinculada | Médio |
-| Transições de status da rota: `planejada → iniciada → concluida` via botão no tracking | Médio |
-| Testes do fluxo ponta a ponta: pedido cria rota, status avança corretamente | Médio |
+### ~~Prioridade 3 — Gestão de rotas (RF09)~~ ✅ *Concluída*
 
-### Prioridade 3 — Gestão de rotas (RF09) `🔶 Parcial`
-
-Rotas já aparecem no dashboard; falta um CRUD dedicado para administrá-las.
-
-| Tarefa | Esforço |
-|--------|---------|
-| `RotaController@index` — listagem com filtros de status e motorista | Médio |
-| `RotaController@show` — detalhe da rota com waypoints e histórico de rastreamento | Médio |
-| `RotaController@update` — edição de status e reatribuição de motorista/veículo | Médio |
-| Testes de acesso, listagem e atualização de status | Médio |
+- Listagem `/rotas` com filtros de status e motorista, paginação
+- Detalhe `/rotas/{id}` com endereços, waypoints e histórico de rastreamento
+- Ações: cancelar rota (qualquer status ativo) e reatribuir motorista/veículo (só `planejada`)
+- 9 testes cobrindo index, show, filtros, cancelamento e reatribuição
 
 ### Prioridade 4 — Notificações por e-mail (RF06) `❌ Não implementado`
 

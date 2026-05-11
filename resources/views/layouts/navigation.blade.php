@@ -10,6 +10,7 @@
                 <a class="py-2 px-3 text-gray-700 hover:text-primary rounded-md" href="{{ route('dashboard') }}">Dashboard</a>
                 <a class="py-2 px-3 text-gray-700 hover:text-primary rounded-md" href="{{ route('tracking') }}">Tracking</a>
                 <a class="py-2 px-3 text-gray-700 hover:text-primary rounded-md" href="{{ route('motoristas.index') }}">Motoristas</a>
+                <a class="py-2 px-3 text-gray-700 hover:text-primary rounded-md" href="{{ route('rotas.index') }}">Rotas</a>
 
                 {{-- Dropdown Pedidos --}}
                 <div class="relative" x-data="{ open: false }">
@@ -64,6 +65,7 @@
                         <a class="block py-2 px-4 text-sm text-gray-700 hover:bg-gray-100" href="{{ route('dashboard') }}">Dashboard</a>
                         <a class="block py-2 px-4 text-sm text-gray-700 hover:bg-gray-100" href="{{ route('tracking') }}">Tracking</a>
                         <a class="block py-2 px-4 text-sm text-gray-700 hover:bg-gray-100" href="{{ route('motoristas.index') }}">Motoristas</a>
+                        <a class="block py-2 px-4 text-sm text-gray-700 hover:bg-gray-100" href="{{ route('rotas.index') }}">Rotas</a>
                         <hr class="my-1 border-gray-100">
                         <a class="block py-2 px-4 text-sm text-gray-700 hover:bg-gray-100" href="{{ route('registration') }}">Novo Pedido</a>
                         <a class="block py-2 px-4 text-sm text-gray-700 hover:bg-gray-100" href="{{ route('pedidos.index') }}">Meus Pedidos</a>

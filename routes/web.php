@@ -12,6 +12,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SupportController;
 use App\Http\Controllers\WaypointController;
 use App\Http\Controllers\MotoristaController;
+use App\Http\Controllers\RotaController;
 use App\Http\Controllers\PlanoAssinaturaController;
 use App\Models\Rastreamento;
 
@@ -98,6 +99,10 @@ Route::middleware(['auth'])->group(function () {
     // PEDIDOS
     // =========================================================
     Route::get('/motoristas', [MotoristaController::class, 'index'])->name('motoristas.index');
+
+    Route::get('/rotas', [RotaController::class, 'index'])->name('rotas.index');
+    Route::get('/rotas/{id}', [RotaController::class, 'show'])->name('rotas.show');
+    Route::patch('/rotas/{id}', [RotaController::class, 'update'])->name('rotas.update');
 
     Route::get('/registration', [PedidoController::class, 'create'])->name('registration');
     Route::get('/pedidos', [PedidoController::class, 'index'])->name('pedidos.index');
