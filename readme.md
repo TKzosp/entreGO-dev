@@ -79,21 +79,24 @@ Acesse em: **http://localhost:8000**
 
 ## Rotas disponíveis
 
-| Rota                  | Descrição                                    |
-|-----------------------|----------------------------------------------|
-| `/login`              | Tela de login                                |
-| `/register`           | Cadastro de novo usuário                     |
-| `/`                   | Dashboard de desempenho (alias de /dashboard)|
-| `/dashboard`          | Dashboard com KPIs, gráficos e filtros       |
-| `/tracking`           | Rastreamento de rotas com Google Maps        |
-| `/profile`            | Dados e configurações do usuário logado      |
-| `/registration`       | Formulário de cadastro de pedido             |
-| `/pedidos`            | Histórico de pedidos do usuário autenticado  |
-| `/assinaturas`        | Planos de assinatura disponíveis             |
-| `/minha-assinatura`   | Assinatura ativa do usuário                  |
-| `/faq`                | Perguntas frequentes (suporte)               |
-| `/contato`            | Formulário de contato                        |
-| `/meus-chamados`      | Histórico de chamados de suporte             |
+| Rota                  | Descrição                                          |
+|-----------------------|----------------------------------------------------|
+| `/login`              | Tela de login                                      |
+| `/register`           | Cadastro de novo usuário                           |
+| `/`                   | Dashboard de desempenho (alias de `/dashboard`)    |
+| `/dashboard`          | Dashboard com KPIs, gráficos e filtros             |
+| `/tracking`           | Rastreamento em tempo real com Google Maps         |
+| `/profile`            | Dados e configurações do usuário logado            |
+| `/registration`       | Formulário de cadastro de novo pedido              |
+| `/pedidos`            | Histórico de pedidos do usuário autenticado        |
+| `/motoristas`         | Listagem de motoristas com métricas de desempenho  |
+| `/rotas`              | Gestão de rotas com filtros de status e motorista  |
+| `/rotas/{id}`         | Detalhe da rota: waypoints, rastreamento e ações   |
+| `/assinaturas`        | Planos de assinatura disponíveis                   |
+| `/minha-assinatura`   | Assinatura ativa do usuário                        |
+| `/faq`                | Perguntas frequentes (suporte)                     |
+| `/contato`            | Formulário de contato                              |
+| `/meus-chamados`      | Histórico de chamados de suporte                   |
 
 ---
 
@@ -131,7 +134,7 @@ Resultado esperado: `77 tests, 148 assertions` — todos passando.
 
 ### Exemplos de testes implementados
 
-**1. Login com credenciais válidas redireciona para o dashboard**
+**1. Autenticação — login com credenciais válidas**
 ```php
 // tests/Feature/AuthTest.php
 public function test_login_with_valid_credentials_redirects_to_dashboard(): void
@@ -145,100 +148,81 @@ public function test_login_with_valid_credentials_redirects_to_dashboard(): void
 }
 ```
 
-**2. Rotas protegidas redirecionam usuário não autenticado**
+**2. Agendamento — pedido cria rota e atribui motorista automaticamente**
 ```php
-// tests/Feature/AuthTest.php
-public function test_dashboard_redirects_unauthenticated_user(): void
+// tests/Feature/AgendamentoTest.php
+public function test_store_cria_rota_quando_motorista_disponivel(): void
 {
-    $this->get('/')->assertRedirect('/login');
-}
+    $cliente = $this->criarUsuario();
+    $this->criarMotoristaComVeiculo();
 
-public function test_tracking_redirects_unauthenticated_user(): void
-{
-    $this->get('/tracking')->assertRedirect('/login');
-}
-```
+    $this->actingAs($cliente)->post('/pedidos', $this->dadosPedido());
 
-**3. Relacionamento `hasOne` entre Pedido e Rota**
-```php
-// tests/Unit/ModelRelationshipsTest.php
-public function test_pedido_has_one_rota(): void
-{
-    [$pedido] = $this->criarPedidoComRota();
+    $this->assertDatabaseHas('pedidos', ['cliente_id' => $cliente->id, 'status' => 'aceito']);
 
-    $this->assertInstanceOf(HasOne::class, $pedido->rota());
+    $pedido = Pedido::where('cliente_id', $cliente->id)->first();
     $this->assertNotNull($pedido->rota);
+    $this->assertEquals('planejada', $pedido->rota->status);
 }
 ```
 
-**4. Rastreamento é salvo e recuperado via relacionamento**
+**3. Agendamento — conclusão de rota marca pedido como entregue**
 ```php
-// tests/Unit/ModelRelationshipsTest.php
-public function test_rota_has_many_rastreamentos(): void
+// tests/Feature/AgendamentoTest.php
+public function test_avancar_status_iniciada_para_concluida_marca_pedido_entregue(): void
 {
-    [, $rota] = $this->criarPedidoComRota();
+    $cliente = $this->criarUsuario();
+    $this->criarMotoristaComVeiculo();
+    $this->actingAs($cliente)->post('/pedidos', $this->dadosPedido());
 
-    Rastreamento::create([
-        'rota_id'   => $rota->id,
-        'latitude'  => -23.5613,
-        'longitude' => -46.6565,
-        'data_hora' => now(),
-    ]);
+    $pedido = Pedido::where('cliente_id', $cliente->id)->first();
+    $pedido->rota->update(['status' => 'iniciada']);
 
-    $this->assertInstanceOf(HasMany::class, $rota->rastreamentos());
-    $this->assertCount(1, $rota->rastreamentos);
+    $this->actingAs($this->criarMotorista())
+         ->patch("/tracking/rotas/{$pedido->rota->id}/status")
+         ->assertJson(['novo_status' => 'concluida']);
+
+    $this->assertDatabaseHas('pedidos', ['id' => $pedido->id, 'status' => 'entregue']);
 }
 ```
 
-**5. Cadastro de usuário persiste no banco e redireciona corretamente**
+**4. Motoristas — exibe apenas motoristas com métricas corretas**
 ```php
-// tests/Feature/AuthTest.php
-public function test_register_creates_user_and_redirects_to_login(): void
+// tests/Feature/MotoristaTest.php
+public function test_motoristas_page_shows_only_motoristas(): void
 {
-    $this->post('/register', [
-        'nome'               => 'Novo Usuário',
-        'email'              => 'novo@entrego.com',
-        'senha'              => 'senha123',
-        'senha_confirmation' => 'senha123',
-    ])->assertRedirect('/login');
+    $cliente   = $this->criarUsuario(['tipo' => 'cliente', 'email' => 'c@test.com']);
+    $motorista = $this->criarMotorista(['nome' => 'Motorista Visivel', 'email' => 'm@test.com']);
 
-    $this->assertDatabaseHas('usuarios', ['email' => 'novo@entrego.com']);
+    $response = $this->actingAs($cliente)->get('/motoristas');
+
+    $response->assertStatus(200)
+             ->assertSee('Motorista Visivel')
+             ->assertDontSee($cliente->nome);
+}
+```
+
+**5. Gestão de rotas — cancelar rota atualiza pedido**
+```php
+// tests/Feature/RotaTest.php
+public function test_cancelar_rota_planejada(): void
+{
+    ['cliente' => $cliente, 'rota' => $rota, 'pedido' => $pedido] = $this->criarRotaCompleta('planejada');
+
+    $this->actingAs($cliente)
+         ->patch("/rotas/{$rota->id}", ['acao' => 'cancelar'])
+         ->assertRedirect();
+
+    $this->assertDatabaseHas('rotas',   ['id' => $rota->id,   'status' => 'cancelada']);
+    $this->assertDatabaseHas('pedidos', ['id' => $pedido->id, 'status' => 'cancelado']);
 }
 ```
 
 ---
 
-## O que falta implementar
+## Pendências
 
-> Apenas itens pendentes. O que já foi concluído consta no histórico de commits.
-
-### Prioridade 1 — Página de motoristas `RF` parcial
-
-Desbloqueia o agendamento: para atribuir uma rota a um motorista, precisamos listar e selecionar motoristas.
-
-| Tarefa | Esforço |
-|--------|---------|
-| `MotoristaController@index` — lista `Usuario` onde `tipo = 'motorista'` com métricas agregadas (total de rotas, eficiência) | Baixo |
-| View `/motoristas` — tabela com nome, veículo padrão, total de entregas e eficiência | Baixo |
-| Testes: carregamento, redirecionamento não autenticado, dados corretos | Baixo |
-
-### ~~Prioridade 2 — Agendamento de coletas (RF07)~~ ✅ *Concluída*
-
-- Atribuição automática do motorista com menos rotas ativas ao criar pedido
-- Transições de status `planejada → iniciada → concluida` via botões no tracking
-- Conclusão de rota marca pedido como `entregue` automaticamente
-- 6 testes cobrindo o fluxo ponta a ponta
-
-### ~~Prioridade 3 — Gestão de rotas (RF09)~~ ✅ *Concluída*
-
-- Listagem `/rotas` com filtros de status e motorista, paginação
-- Detalhe `/rotas/{id}` com endereços, waypoints e histórico de rastreamento
-- Ações: cancelar rota (qualquer status ativo) e reatribuir motorista/veículo (só `planejada`)
-- 9 testes cobrindo index, show, filtros, cancelamento e reatribuição
-
-### Prioridade 4 — Notificações por e-mail (RF06) `❌ Não implementado`
-
-Depende do fluxo de status do agendamento (Prioridade 2) estar estável.
+### RF06 — Notificações por e-mail `❌ Não implementado`
 
 | Tarefa | Esforço |
 |--------|---------|
