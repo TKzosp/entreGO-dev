@@ -208,35 +208,51 @@ public function test_register_creates_user_and_redirects_to_login(): void
 
 ---
 
-## To Do — Próximas Implementações
+## O que falta implementar
 
-As tarefas estão ordenadas por prioridade. As de cima desbloqueiam as de baixo.
+> Apenas itens pendentes. O que já foi concluído consta no histórico de commits.
 
-### Prioridade 1 — Fundação do banco de dados ✅ *Concluída*
+### Prioridade 1 — Página de motoristas `RF` parcial
 
-- [x] Migrations para as tabelas de domínio: `pedidos`, `rotas`, `veiculos`, `enderecos`, `rastreamento`
-- [x] Models Eloquent com todos os relacionamentos (`Veiculo`, `Endereco`, `Pedido`, `Rota`, `Rastreamento`)
-- [x] Seeder com dados realistas: 4 motoristas, 1 cliente, 14 pedidos, 14 rotas, 12 posições de rastreamento
-- [x] Suite de 46 testes automatizados (PHPUnit) — todos passando
+Desbloqueia o agendamento: para atribuir uma rota a um motorista, precisamos listar e selecionar motoristas.
 
-### Prioridade 2 — Conectar UI ao banco real ✅ *Concluída*
+| Tarefa | Esforço |
+|--------|---------|
+| `MotoristaController@index` — lista `Usuario` onde `tipo = 'motorista'` com métricas agregadas (total de rotas, eficiência) | Baixo |
+| View `/motoristas` — tabela com nome, veículo padrão, total de entregas e eficiência | Baixo |
+| Testes: carregamento, redirecionamento não autenticado, dados corretos | Baixo |
 
-- [x] Dashboard: queries reais com filtros por período e tipo de veículo; KPIs, tabela e 3 gráficos
-- [x] Cadastro de pedidos (`/registration`): formulário completo, validação e persistência no banco
-- [x] Rastreamento (`/tracking`): rota ativa carregada do banco, posição inicial real no mapa
+### Prioridade 2 — Agendamento de coletas (RF07) `🔶 Parcial`
 
-### Prioridade 3 — Funcionalidades de gestão
+A view de criação existe; o backend precisa fechar o fluxo completo.
 
-- [ ] Página de gestão de rotas (CRUD completo)
-- [x] Página de histórico de entregas realizadas (`/pedidos`): tabela paginada com status colorido, isolamento por usuário
-- [ ] Página de motoristas (listagem e detalhes)
-- [ ] Agendamento de coletas: completar backend e validar fluxo de ponta a ponta
+| Tarefa | Esforço |
+|--------|---------|
+| `PedidoController@store` atribuir automaticamente motorista disponível e criar `Rota` vinculada | Médio |
+| Transições de status da rota: `planejada → iniciada → concluida` via botão no tracking | Médio |
+| Testes do fluxo ponta a ponta: pedido cria rota, status avança corretamente | Médio |
 
-### Prioridade 4 — Funcionalidades avançadas
+### Prioridade 3 — Gestão de rotas (RF09) `🔶 Parcial`
 
-- [ ] RF06: Envio de notificações por e-mail ao cliente (confirmação de coleta, status de entrega)
-- [ ] Página de gestão de usuários (admin)
-- [ ] Login com OAuth (Google / GitHub)
+Rotas já aparecem no dashboard; falta um CRUD dedicado para administrá-las.
+
+| Tarefa | Esforço |
+|--------|---------|
+| `RotaController@index` — listagem com filtros de status e motorista | Médio |
+| `RotaController@show` — detalhe da rota com waypoints e histórico de rastreamento | Médio |
+| `RotaController@update` — edição de status e reatribuição de motorista/veículo | Médio |
+| Testes de acesso, listagem e atualização de status | Médio |
+
+### Prioridade 4 — Notificações por e-mail (RF06) `❌ Não implementado`
+
+Depende do fluxo de status do agendamento (Prioridade 2) estar estável.
+
+| Tarefa | Esforço |
+|--------|---------|
+| Mailable `ColetaConfirmada` — disparado ao criar pedido com rota atribuída | Alto |
+| Mailable `StatusEntregaAtualizado` — disparado a cada transição de status | Alto |
+| Configurar SMTP no `.env` e fila de jobs (`queue:work`) | Alto |
+| Testes com `Mail::fake()` | Médio |
 
 ---
 
