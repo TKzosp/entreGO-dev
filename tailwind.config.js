@@ -12,8 +12,6 @@ export default {
     theme: {
         extend: {
             colors: {
-                // Cores da marca entreGO – mantidas em sincronia com o config inline
-                // do Tailwind CDN em resources/views/layouts/app.blade.php.
                 'entrego-blue': {
                     DEFAULT: '#007BFF',
                     50:  '#E6F2FF',
@@ -22,8 +20,11 @@ export default {
                     600: '#0069D9',
                     700: '#0056B3',
                 },
-                primary: '#007BFF',
-                accent: '#10B981',
+                primary:    '#4F46E5',
+                secondary:  '#6B7280',
+                accent:     '#10B981',
+                background: '#F9FAFB',
+                surface:    '#FFFFFF',
             },
             fontFamily: {
                 sans: ['Figtree', 'Roboto', ...defaultTheme.fontFamily.sans],

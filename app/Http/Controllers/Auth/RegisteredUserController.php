@@ -30,9 +30,8 @@ class RegisteredUserController extends Controller
         'tipo' => $request->tipo ?? 'cliente',
         'ativo' => true,
     ]);
-Auth::login($usuario);
+        Auth::login($usuario);
 
-return redirect('/login')->with('success', 'Cadastro realizado com sucesso! Faça o login.');
-dd($usuario);
+        return redirect('/login')->with('success', 'Cadastro realizado com sucesso! Faça o login.');
     }
 }

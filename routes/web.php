@@ -35,9 +35,7 @@ Route::middleware(['auth'])->group(function () {
 
     // Dashboard
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
-    Route::get('/dashboard', function () {
-        return redirect()->route('dashboard');
-    })->name('dashboard.redirect');
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard.redirect');
 
     // Perfil
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile');

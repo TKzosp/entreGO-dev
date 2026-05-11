@@ -43,7 +43,7 @@ class LoginController extends Controller
             // Em produção use LOG_LEVEL=warning para evitar I/O síncrono.
             Log::debug('Login bem-sucedido', ['user_id' => Auth::id()]);
 
-            return redirect()->intended('/dashboard');
+            return redirect()->intended('/');
         }
 
         RateLimiter::hit($throttleKey, 60); // 60s de janela

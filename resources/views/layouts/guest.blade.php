@@ -7,9 +7,14 @@
 
         <title>{{ config('app.name', 'Laravel') }}</title>
 
-        <!-- Fonts -->
+        <!-- Fonts: preload para não bloquear renderização -->
         <link rel="preconnect" href="https://fonts.bunny.net">
-        <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
+        <link rel="preload" as="style"
+              href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap"
+              onload="this.rel='stylesheet'">
+        <noscript>
+            <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet">
+        </noscript>
 
         <!-- Scripts -->
         @vite(['resources/css/app.css', 'resources/js/app.js'])

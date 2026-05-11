@@ -15,7 +15,7 @@
                 </p>
             </div>
 
-            <div class="flex flex-wrap items-center gap-3">
+            <form method="GET" action="{{ route('dashboard.redirect') }}" class="flex flex-wrap items-center gap-3">
                 {{-- Filtro de período --}}
                 <div class="flex flex-col">
                     <label class="text-xs font-medium text-slate-500 mb-1">
@@ -24,11 +24,12 @@
                     <select
                         class="rounded-lg border-slate-200 text-sm shadow-sm focus:border-entrego-blue focus:ring-entrego-blue"
                         name="periodo"
+                        onchange="this.form.submit()"
                     >
-                        <option value="7d">Últimos 7 dias</option>
-                        <option value="30d" selected>Últimos 30 dias</option>
-                        <option value="mes_atual">Mês atual</option>
-                        <option value="90d">Últimos 90 dias</option>
+                        <option value="7d"       {{ ($periodoAtual ?? '30d') === '7d'       ? 'selected' : '' }}>Últimos 7 dias</option>
+                        <option value="30d"      {{ ($periodoAtual ?? '30d') === '30d'      ? 'selected' : '' }}>Últimos 30 dias</option>
+                        <option value="mes_atual"{{ ($periodoAtual ?? '30d') === 'mes_atual' ? 'selected' : '' }}>Mês atual</option>
+                        <option value="90d"      {{ ($periodoAtual ?? '30d') === '90d'      ? 'selected' : '' }}>Últimos 90 dias</option>
                     </select>
                 </div>
 
@@ -40,15 +41,16 @@
                     <select
                         class="rounded-lg border-slate-200 text-sm shadow-sm focus:border-entrego-blue focus:ring-entrego-blue"
                         name="categoria_veiculo"
+                        onchange="this.form.submit()"
                     >
-                        <option value="todos" selected>Todos</option>
-                        <option value="moto">Moto</option>
-                        <option value="carro">Carro</option>
-                        <option value="caminhao_leve">Caminhão leve</option>
-                        <option value="caminhao_pesado">Caminhão pesado</option>
+                        <option value="todos"          {{ ($categoriaAtual ?? 'todos') === 'todos'           ? 'selected' : '' }}>Todos</option>
+                        <option value="moto"           {{ ($categoriaAtual ?? 'todos') === 'moto'            ? 'selected' : '' }}>Moto</option>
+                        <option value="carro"          {{ ($categoriaAtual ?? 'todos') === 'carro'           ? 'selected' : '' }}>Carro</option>
+                        <option value="caminhao_leve"  {{ ($categoriaAtual ?? 'todos') === 'caminhao_leve'   ? 'selected' : '' }}>Caminhão leve</option>
+                        <option value="caminhao_pesado"{{ ($categoriaAtual ?? 'todos') === 'caminhao_pesado' ? 'selected' : '' }}>Caminhão pesado</option>
                     </select>
                 </div>
-            </div>
+            </form>
         </header>
 
         {{-- Cards de resumo (RF08) --}}
@@ -287,6 +289,10 @@
             const falhasLabels       = parseAttr('data-falhas-tipo-labels');
             const falhasData         = parseAttr('data-falhas-tipo-data');
 
+            const blue      = '#007BFF';
+            const blueLight = 'rgba(0, 123, 255, 0.15)';
+            const palette   = ['#007BFF', '#f59e0b', '#10b981', '#f43f5e'];
+
             // Gráfico: Tempo médio de entrega
             const tempoCtx = document.getElementById('chartTempoEntrega');
             if (tempoCtx && tempoEntregaLabels.length) {
@@ -297,9 +303,13 @@
                         datasets: [{
                             label: 'Tempo médio (min)',
                             data: tempoEntregaData,
+                            borderColor: blue,
+                            backgroundColor: blueLight,
+                            fill: true,
                             borderWidth: 2,
                             tension: 0.4,
-                            pointRadius: 3
+                            pointRadius: 3,
+                            pointBackgroundColor: blue,
                         }]
                     },
                     options: {
@@ -328,7 +338,14 @@
                         datasets: [{
                             label: 'Coletas',
                             data: coletasData,
-                            borderWidth: 1
+                            backgroundColor: [
+                                'rgba(0,123,255,0.80)',
+                                'rgba(0,123,255,0.60)',
+                                'rgba(0,123,255,0.40)',
+                                'rgba(0,123,255,0.25)',
+                            ],
+                            borderColor: blue,
+                            borderWidth: 1,
                         }]
                     },
                     options: {
@@ -355,7 +372,10 @@
                     data: {
                         labels: falhasLabels,
                         datasets: [{
-                            data: falhasData
+                            data: falhasData,
+                            backgroundColor: palette,
+                            borderWidth: 2,
+                            borderColor: '#ffffff',
                         }]
                     },
                     options: {
