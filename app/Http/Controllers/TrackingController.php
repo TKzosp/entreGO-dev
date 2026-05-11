@@ -3,22 +3,51 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use App\Models\Rota;
 use App\Models\Rastreamento;
 
 class TrackingController extends Controller
 {
-    /**
-     * Tela de tracking (front).
-     */
     public function index()
     {
+        $usuario = Auth::user();
+
+        // Prioridade: rota ativa do próprio motorista logado
+        $rota = null;
+        if ($usuario->tipo === 'motorista') {
+            $rota = Rota::with(['pedido.enderecoColeta', 'pedido.enderecoEntrega', 'veiculo'])
+                ->where('motorista_id', $usuario->id)
+                ->whereIn('status', ['planejada', 'iniciada'])
+                ->latest()
+                ->first();
+        }
+
+        // Fallback: qualquer rota ativa no sistema (para clientes e demo)
+        if (!$rota) {
+            $rota = Rota::with(['pedido.enderecoColeta', 'pedido.enderecoEntrega', 'veiculo', 'motorista'])
+                ->whereIn('status', ['planejada', 'iniciada'])
+                ->latest()
+                ->first();
+        }
+
+        // Último recurso: rota mais recente independente de status
+        if (!$rota) {
+            $rota = Rota::with(['pedido.enderecoColeta', 'pedido.enderecoEntrega', 'veiculo', 'motorista'])
+                ->latest()
+                ->first();
+        }
+
+        $posicaoAtual = $rota
+            ? Rastreamento::where('rota_id', $rota->id)->latest('data_hora')->first()
+            : null;
+
         return view('tracking', [
-            'rotaId' => 1,
-            'origem' => null,
-            'destino' => null,
-            'posicaoAtual' => null,
+            'rota'         => $rota,
+            'rotaId'       => $rota?->id,
+            'posicaoAtual' => $posicaoAtual,
         ]);
     }
 

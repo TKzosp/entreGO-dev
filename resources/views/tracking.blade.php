@@ -4,7 +4,66 @@
 
 @section('content')
 <div class="py-12">
-    <div class="max-w-4xl mx-auto sm:px-6 lg:px-8">
+    <div class="max-w-4xl mx-auto sm:px-6 lg:px-8 space-y-4">
+
+        {{-- Card de informações da rota atual --}}
+        @if($rota)
+            <div class="bg-white shadow-sm sm:rounded-lg border border-gray-200 p-5">
+                <div class="flex items-center justify-between mb-3">
+                    <h3 class="text-sm font-semibold text-gray-700 uppercase tracking-wide">Rota em Monitoramento</h3>
+                    <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium
+                        @if($rota->status === 'iniciada') bg-green-100 text-green-700
+                        @elseif($rota->status === 'planejada') bg-blue-100 text-blue-700
+                        @elseif($rota->status === 'concluida') bg-gray-100 text-gray-600
+                        @else bg-red-100 text-red-700
+                        @endif">
+                        {{ ucfirst($rota->status) }}
+                    </span>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+                    <div>
+                        <span class="block text-xs font-medium text-gray-500 mb-1">Coleta</span>
+                        <p class="text-gray-800">
+                            {{ $rota->pedido?->enderecoColeta?->logradouro }},
+                            {{ $rota->pedido?->enderecoColeta?->numero }}
+                            — {{ $rota->pedido?->enderecoColeta?->cidade }}/{{ $rota->pedido?->enderecoColeta?->estado }}
+                        </p>
+                    </div>
+                    <div>
+                        <span class="block text-xs font-medium text-gray-500 mb-1">Entrega</span>
+                        <p class="text-gray-800">
+                            {{ $rota->pedido?->enderecoEntrega?->logradouro }},
+                            {{ $rota->pedido?->enderecoEntrega?->numero }}
+                            — {{ $rota->pedido?->enderecoEntrega?->cidade }}/{{ $rota->pedido?->enderecoEntrega?->estado }}
+                        </p>
+                    </div>
+                    @if($rota->motorista)
+                    <div>
+                        <span class="block text-xs font-medium text-gray-500 mb-1">Motorista</span>
+                        <p class="text-gray-800">{{ $rota->motorista->nome }}</p>
+                    </div>
+                    @endif
+                    @if($rota->veiculo)
+                    <div>
+                        <span class="block text-xs font-medium text-gray-500 mb-1">Veículo</span>
+                        <p class="text-gray-800">{{ ucfirst($rota->veiculo->tipo) }} — {{ $rota->veiculo->placa }}</p>
+                    </div>
+                    @endif
+                </div>
+                @if($posicaoAtual)
+                    <p class="mt-3 text-xs text-gray-400">
+                        Última posição registrada: {{ $posicaoAtual->data_hora?->format('d/m/Y H:i') }}
+                        ({{ number_format($posicaoAtual->latitude, 5) }}, {{ number_format($posicaoAtual->longitude, 5) }})
+                    </p>
+                @endif
+            </div>
+        @else
+            <div class="bg-amber-50 border border-amber-200 rounded-lg p-4 text-sm text-amber-800">
+                Nenhuma rota ativa encontrada no sistema.
+            </div>
+        @endif
+
+        {{-- Painel do motorista --}}
         <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg border border-gray-200">
             <div class="p-6 flex flex-col gap-6">
 
@@ -44,13 +103,18 @@
                 </div>
 
                 <div class="flex items-center gap-4">
-                    <button id="btn-iniciar" class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700 transition">
-                        Iniciar Rastreamento
-                    </button>
-
-                    <button id="btn-parar" class="hidden inline-flex items-center px-4 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-700 transition">
-                        Parar Rastreamento
-                    </button>
+                    @if($rota)
+                        <button id="btn-iniciar" class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700 transition">
+                            Iniciar Rastreamento
+                        </button>
+                        <button id="btn-parar" class="hidden inline-flex items-center px-4 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-700 transition">
+                            Parar Rastreamento
+                        </button>
+                    @else
+                        <button disabled class="inline-flex items-center px-4 py-2 bg-gray-300 border border-transparent rounded-md font-semibold text-xs text-gray-500 uppercase tracking-widest cursor-not-allowed">
+                            Sem Rota Ativa
+                        </button>
+                    @endif
                 </div>
 
             </div>
@@ -66,19 +130,24 @@
     let mapInitialized = false;
     let waypointMarkers = [];
 
-    const rotaId = 1;
+    const rotaId = {{ $rotaId ?? 'null' }};
+
+    @if($posicaoAtual)
+    const initialLat = {{ $posicaoAtual->latitude }};
+    const initialLng = {{ $posicaoAtual->longitude }};
+    @else
+    const initialLat = -23.550520;
+    const initialLng = -46.633308;
+    @endif
 
     async function carregarWaypoints() {
+        if (!rotaId) return;
         try {
             const response = await fetch(`/rotas/${rotaId}/waypoints`, {
-                headers: {
-                    'Accept': 'application/json'
-                }
+                headers: { 'Accept': 'application/json' }
             });
 
-            if (!response.ok) {
-                throw new Error('Erro ao carregar waypoints');
-            }
+            if (!response.ok) throw new Error('Erro ao carregar waypoints');
 
             const waypoints = await response.json();
 
@@ -87,10 +156,7 @@
 
             waypoints.forEach(wp => {
                 const marker = new google.maps.Marker({
-                    position: {
-                        lat: parseFloat(wp.latitude),
-                        lng: parseFloat(wp.longitude)
-                    },
+                    position: { lat: parseFloat(wp.latitude), lng: parseFloat(wp.longitude) },
                     map: map,
                     draggable: false,
                     icon: "https://maps.google.com/mapfiles/ms/icons/red-dot.png"
@@ -106,10 +172,7 @@
                             }
                         });
 
-                        if (!response.ok) {
-                            throw new Error("Erro ao remover waypoint");
-                        }
-
+                        if (!response.ok) throw new Error("Erro ao remover waypoint");
                         carregarWaypoints();
                     } catch (error) {
                         console.error(error);
@@ -125,7 +188,7 @@
     }
 
     function initMap() {
-        const initialPos = { lat: -23.550520, lng: -46.633308 };
+        const initialPos = { lat: initialLat, lng: initialLng };
 
         map = new google.maps.Map(document.getElementById("map"), {
             zoom: 16,
@@ -148,36 +211,35 @@
             }
         });
 
-        map.addListener("click", async function(event) {
-            const latitude = event.latLng.lat();
-            const longitude = event.latLng.lng();
+        if (rotaId) {
+            map.addListener("click", async function(event) {
+                const latitude = event.latLng.lat();
+                const longitude = event.latLng.lng();
 
-            try {
-                const response = await fetch("/waypoints", {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "X-CSRF-TOKEN": "{{ csrf_token() }}",
-                        "Accept": "application/json"
-                    },
-                    body: JSON.stringify({
-                        rota_id: rotaId,
-                        latitude: latitude,
-                        longitude: longitude,
-                        ordem: waypointMarkers.length
-                    })
-                });
+                try {
+                    const response = await fetch("/waypoints", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            "X-CSRF-TOKEN": "{{ csrf_token() }}",
+                            "Accept": "application/json"
+                        },
+                        body: JSON.stringify({
+                            rota_id: rotaId,
+                            latitude: latitude,
+                            longitude: longitude,
+                            ordem: waypointMarkers.length
+                        })
+                    });
 
-                if (!response.ok) {
-                    throw new Error("Erro ao salvar waypoint");
+                    if (!response.ok) throw new Error("Erro ao salvar waypoint");
+                    carregarWaypoints();
+                } catch (error) {
+                    console.error(error);
+                    alert("Não foi possível salvar o waypoint.");
                 }
-
-                carregarWaypoints();
-            } catch (error) {
-                console.error(error);
-                alert("Não foi possível salvar o waypoint.");
-            }
-        });
+            });
+        }
 
         driverPath = new google.maps.Polyline({
             path: pathCoordinates,
@@ -193,12 +255,16 @@
     }
 
     document.addEventListener('DOMContentLoaded', () => {
-        const btnIniciar = document.getElementById('btn-iniciar');
-        const btnParar = document.getElementById('btn-parar');
-        const statusText = document.getElementById('status-text');
+        if (!rotaId) return;
+
+        const btnIniciar   = document.getElementById('btn-iniciar');
+        const btnParar     = document.getElementById('btn-parar');
+        const statusText   = document.getElementById('status-text');
         const statusIndicator = document.getElementById('status-indicator');
-        const etaText = document.getElementById('eta-text');
-        const mapOverlay = document.getElementById('map-overlay');
+        const etaText      = document.getElementById('eta-text');
+        const mapOverlay   = document.getElementById('map-overlay');
+
+        if (!btnIniciar) return;
 
         let watchId = null;
 
@@ -235,9 +301,9 @@
         });
 
         function posicaoObtidaComSucesso(position) {
-            const lat = position.coords.latitude;
-            const lng = position.coords.longitude;
-            const newPos = { lat: lat, lng: lng };
+            const lat    = position.coords.latitude;
+            const lng    = position.coords.longitude;
+            const newPos = { lat, lng };
 
             statusText.textContent = 'Em Rota (Enviando dados)';
             statusIndicator.classList.remove('bg-red-500', 'bg-yellow-500');
@@ -268,19 +334,13 @@
             })
             .then(async response => {
                 const data = await response.json();
-
-                if (!response.ok) {
-                    throw new Error(data.message || 'Erro ao salvar localização');
-                }
-
+                if (!response.ok) throw new Error(data.message || 'Erro ao salvar localização');
                 return data;
             })
             .then(data => {
-                if (data.previsao_entrega) {
-                    etaText.textContent = `${data.previsao_entrega.tempo_estimado} (faltam ${data.previsao_entrega.distancia_restante})`;
-                } else {
-                    etaText.textContent = 'Localização enviada com sucesso';
-                }
+                etaText.textContent = data.previsao_entrega
+                    ? `${data.previsao_entrega.tempo_estimado} (faltam ${data.previsao_entrega.distancia_restante})`
+                    : 'Localização enviada com sucesso';
             })
             .catch(error => {
                 console.error('Erro na sincronização:', error);
@@ -298,4 +358,4 @@
 </script>
 
 <script async defer src="https://maps.googleapis.com/maps/api/js?key={{ env('GOOGLE_MAPS_API_KEY') }}&callback=initMap"></script>
-@endsection 
+@endsection
