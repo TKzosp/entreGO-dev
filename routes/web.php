@@ -11,6 +11,7 @@ use App\Http\Controllers\PedidoController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SupportController;
 use App\Http\Controllers\WaypointController;
+use App\Http\Controllers\MotoristaController;
 use App\Http\Controllers\PlanoAssinaturaController;
 use App\Models\Rastreamento;
 
@@ -93,6 +94,8 @@ Route::middleware(['auth'])->group(function () {
     // =========================================================
     // PEDIDOS
     // =========================================================
+    Route::get('/motoristas', [MotoristaController::class, 'index'])->name('motoristas.index');
+
     Route::get('/registration', [PedidoController::class, 'create'])->name('registration');
     Route::get('/pedidos', [PedidoController::class, 'index'])->name('pedidos.index');
     Route::post('/pedidos', [PedidoController::class, 'store'])->name('pedidos.store');
