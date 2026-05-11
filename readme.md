@@ -1,66 +1,123 @@
-# Como rodar o projeto
+# entreGO — Sistema de Gestão de Entregas
 
-### Pré-requisitos
-
--   PHP
--   Laravel
--   NodeJS
--   NPM
--   MySQL
+Plataforma web para gerenciamento de rotas, coletas e desempenho de entregas, desenvolvida com Laravel 12 + Tailwind CSS + Alpine.js.
 
 ---
 
-### Após Garantir que os programas acima estão instalados em sua maquina rode os seguintes comando.
+## Pré-requisitos
 
--   Git clone https://github.com/TKzosp/entreGO-dev
--   composer update
--   npm install
--   npm run build
--   php artisan key:generate
--   php artisan migrate --force
--   php artisan serve \
-    Garantir o que .env estaja configurado com o nome do database, user e password
+| Ferramenta | Versão mínima |
+|------------|---------------|
+| PHP        | 8.2           |
+| Composer   | 2.x           |
+| Node.js    | 18.x          |
+| NPM        | 9.x           |
+| MySQL      | 8.0           |
+
+> Guia de instalação completo: https://laravel.com/docs/12.x/installation#installing-php
 
 ---
 
-### Links Uteis
+## Como rodar o projeto
 
-Para instalar os pré-requisitos: https://laravel.com/docs/12.x/installation#installing-php
+### 1. Clonar e instalar dependências
 
-### Rotas que estão criadas:
+```bash
+git clone https://github.com/TKzosp/entreGO-dev
+cd entreGO-dev
+composer install
+npm install
+```
 
--   /login - Tela de Login
--   /Register - tela de registro de novo usuario
--   / - Tela principal com as consultas
--   /tracking - Tela de rotas
--   /Profile - Tela de dados do usuario
+### 2. Configurar o ambiente
 
-# To do
+Copie o arquivo de exemplo e ajuste as credenciais do banco:
 
--   Front
-    -   Paginas principais
-        -   pagina de historico
-            -   Entregas realizadas
-        -   pagina de motoristas
-        -   pagina de usuarios
-        -   pagina principal (dashboard maybe?)
-    -   Funções
-        -   Nova entrega
-        -   Pagina de rastreio
-        -   Pagina de cadastro de um entrega
--   Back
-    -   integração com a API de rastreio
-    -   API banco de dados entregas
-    -   Banco de dados entregas
-        -   diagramação do banco
-            -   definição de tabelas e colunas
-    -   Integração com 0Auth para login com serviços de terceiros (google e github)
+```bash
+cp .env.example .env
+```
 
-# Membros do grupo
+Edite o `.env` com os dados do seu MySQL:
 
-Antonio Pedro 815711-9\
-Gustavo Henrik 815955-9\
-Rafael Cena 816013-5\
-Ryan Serato Costa 812321-8\
-Thales Tukaze 816085-2\
-Thomas Cassiano 811999-8
+```env
+DB_DATABASE=entrego_db
+DB_USERNAME=root
+DB_PASSWORD=sua_senha
+```
+
+### 3. Gerar chave e migrar o banco
+
+```bash
+php artisan key:generate
+php artisan migrate
+```
+
+> Certifique-se de que o banco `entrego_db` já foi criado no MySQL antes de rodar o migrate.
+
+### 4. Compilar os assets e subir o servidor
+
+```bash
+npm run build
+php artisan serve
+```
+
+Acesse em: **http://localhost:8000**
+
+> Para desenvolvimento com hot-reload, rode `npm run dev` em um terminal separado enquanto `php artisan serve` está ativo.
+
+---
+
+## Rotas disponíveis
+
+| Rota        | Descrição                         |
+|-------------|-----------------------------------|
+| `/login`    | Tela de login                     |
+| `/register` | Cadastro de novo usuário          |
+| `/`         | Dashboard de desempenho           |
+| `/dashboard`| Dashboard de desempenho (alias)   |
+| `/tracking` | Tela de rastreamento de rotas     |
+| `/profile`  | Dados do usuário logado           |
+
+---
+
+## To Do
+
+### Front-end
+
+- [x] Layout base autenticado (`layouts/app.blade.php`)
+- [x] Layout guest para login/cadastro (`layouts/guest.blade.php`)
+- [x] Tela de login
+- [x] Tela de cadastro
+- [x] Dashboard com cards de KPI (eficiência, coletas, tempo médio, falhas)
+- [x] Gráficos de desempenho (tempo de entrega, coletas por veículo, falhas por tipo)
+- [x] Filtros de período e categoria de veículo no dashboard
+- [x] Tabela de detalhamento por rota
+- [ ] Página de histórico de entregas realizadas
+- [ ] Página de motoristas
+- [ ] Página de gestão de usuários
+- [ ] Formulário de nova entrega
+- [ ] Página de cadastro de entrega
+- [ ] Página de rastreamento em tempo real
+
+### Back-end
+
+- [x] Autenticação com guard customizado (`Usuario` model, campo `senha`)
+- [x] Cadastro de usuários com validação
+- [x] Migrações: `usuarios`, `remember_token`, `jobs`/`failed_jobs`
+- [ ] API de banco de dados de entregas
+- [ ] Diagramação e criação das tabelas de entregas
+- [ ] Integração com API de rastreamento
+- [ ] Login com OAuth (Google / GitHub)
+
+---
+
+## Membros do grupo
+
+| Nome             | RA        |
+|------------------|-----------|
+| Antonio Pedro    | 815711-9  |
+| Gustavo Henrik   | 815955-9  |
+| Rafael Cena      | 816013-5  |
+| Ryan Serato Costa| 812321-8  |
+| Thales Tukaze    | 816085-2  |
+| Thomas Cassiano  | 811999-8  |
