@@ -72,6 +72,9 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/tracking/rotas/{rotaId}/localizacao', [TrackingController::class, 'salvarLocalizacao'])
         ->name('tracking.salvar-localizacao');
 
+    Route::patch('/tracking/rotas/{rotaId}/status', [TrackingController::class, 'avancarStatus'])
+        ->name('tracking.avancar-status');
+
 
     // =========================================================
     // RF10 – WAYPOINTS (EDITOR DE ROTA)

@@ -109,9 +109,43 @@ class TrackingController extends Controller
     }
 
     /**
+     * Avança o status da rota: planejada → iniciada → concluida.
+     */
+    public function avancarStatus(Request $request, int $rotaId)
+    {
+        $rota = Rota::with('pedido')->findOrFail($rotaId);
+
+        $proximo = match($rota->status) {
+            'planejada' => 'iniciada',
+            'iniciada'  => 'concluida',
+            default     => null,
+        };
+
+        if (!$proximo) {
+            return response()->json(['message' => 'Rota já está concluída ou cancelada.'], 422);
+        }
+
+        $rota->status = $proximo;
+
+        if ($proximo === 'iniciada') {
+            $rota->data_inicio = now();
+        } elseif ($proximo === 'concluida') {
+            $rota->data_fim = now();
+            optional($rota->pedido)->update(['status' => 'entregue']);
+        }
+
+        $rota->save();
+
+        return response()->json([
+            'message'    => 'Status atualizado.',
+            'novo_status' => $proximo,
+        ]);
+    }
+
+    /**
      * Salva uma nova coordenada do motorista para a rota.
      */
-    public function salvarLocalizacao(Request $request, $rotaId)
+    public function salvarLocalizacao(Request $request, int $rotaId)
     {
         $request->validate([
             'latitude' => 'required|numeric',

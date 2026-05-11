@@ -6,6 +6,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Endereco;
 use App\Models\Pedido;
+use App\Models\Rota;
+use App\Models\Usuario;
+use App\Models\Veiculo;
 
 class PedidoController extends Controller
 {
@@ -77,7 +80,9 @@ class PedidoController extends Controller
             'estado'      => strtoupper($dados['entrega_estado']),
         ]);
 
-        Pedido::create([
+        $motorista = $this->selecionarMotorista();
+
+        $pedido = Pedido::create([
             'cliente_id'          => $usuarioId,
             'endereco_coleta_id'  => $enderecoColeta->id,
             'endereco_entrega_id' => $enderecoEntrega->id,
@@ -85,10 +90,38 @@ class PedidoController extends Controller
             'peso'                => $dados['peso'] ?? null,
             'volume'              => $dados['volume'] ?? null,
             'data_coleta'         => $dados['data_coleta'],
-            'status'              => 'pendente',
+            'status'              => $motorista ? 'aceito' : 'pendente',
             'observacoes'         => $dados['observacoes'] ?? null,
         ]);
 
-        return redirect()->route('registration')->with('success', 'Pedido cadastrado com sucesso! Aguarde a confirmação da coleta.');
+        if ($motorista) {
+            $veiculo = Veiculo::where('usuario_id', $motorista->id)->first();
+
+            Rota::create([
+                'pedido_id'    => $pedido->id,
+                'motorista_id' => $motorista->id,
+                'veiculo_id'   => $veiculo?->id,
+                'status'       => 'planejada',
+                'data_inicio'  => $dados['data_coleta'],
+            ]);
+
+            $mensagem = "Pedido cadastrado! Motorista {$motorista->nome} foi designado para a coleta.";
+        } else {
+            $mensagem = 'Pedido cadastrado com sucesso! Nenhum motorista disponível no momento — você será notificado em breve.';
+        }
+
+        return redirect()->route('registration')->with('success', $mensagem);
+    }
+
+    private function selecionarMotorista(): ?Usuario
+    {
+        return Usuario::where('tipo', 'motorista')
+            ->where('ativo', true)
+            ->has('veiculos')
+            ->withCount(['rotasComoMotorista as rotas_ativas' => fn($q) =>
+                $q->whereIn('status', ['planejada', 'iniciada'])
+            ])
+            ->orderBy('rotas_ativas')
+            ->first();
     }
 }

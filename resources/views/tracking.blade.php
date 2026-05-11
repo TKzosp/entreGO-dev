@@ -102,7 +102,7 @@
                     </div>
                 </div>
 
-                <div class="flex items-center gap-4">
+                <div class="flex items-center gap-4 flex-wrap">
                     @if($rota)
                         <button id="btn-iniciar" class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700 transition">
                             Iniciar Rastreamento
@@ -110,6 +110,19 @@
                         <button id="btn-parar" class="hidden inline-flex items-center px-4 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-700 transition">
                             Parar Rastreamento
                         </button>
+
+                        {{-- Transições de status da rota --}}
+                        @if($rota->status === 'planejada')
+                            <button id="btn-iniciar-rota"
+                                    class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 transition">
+                                Iniciar Rota
+                            </button>
+                        @elseif($rota->status === 'iniciada')
+                            <button id="btn-concluir-rota"
+                                    class="inline-flex items-center px-4 py-2 bg-gray-700 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-800 transition">
+                                Concluir Rota
+                            </button>
+                        @endif
                     @else
                         <button disabled class="inline-flex items-center px-4 py-2 bg-gray-300 border border-transparent rounded-md font-semibold text-xs text-gray-500 uppercase tracking-widest cursor-not-allowed">
                             Sem Rota Ativa
@@ -298,6 +311,33 @@
             statusText.textContent = 'Parado';
             statusIndicator.classList.remove('bg-green-500', 'bg-yellow-500');
             statusIndicator.classList.add('bg-red-500');
+        });
+
+        async function avancarStatusRota() {
+            try {
+                const response = await fetch(`/tracking/rotas/${rotaId}/status`, {
+                    method: 'PATCH',
+                    headers: {
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'Accept': 'application/json',
+                    },
+                });
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.message || 'Erro ao atualizar status');
+                window.location.reload();
+            } catch (error) {
+                alert(error.message);
+            }
+        }
+
+        const btnIniciarRota  = document.getElementById('btn-iniciar-rota');
+        const btnConcluirRota = document.getElementById('btn-concluir-rota');
+
+        btnIniciarRota?.addEventListener('click', avancarStatusRota);
+        btnConcluirRota?.addEventListener('click', () => {
+            if (confirm('Confirmar conclusão da rota? O pedido será marcado como entregue.')) {
+                avancarStatusRota();
+            }
         });
 
         function posicaoObtidaComSucesso(position) {
