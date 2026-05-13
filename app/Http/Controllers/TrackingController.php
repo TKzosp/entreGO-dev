@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use App\Models\Rota;
@@ -14,28 +15,25 @@ class TrackingController extends Controller
     public function index()
     {
         $usuario = Auth::user();
-
-        // Prioridade: rota ativa do próprio motorista logado
         $rota = null;
-        if ($usuario->tipo === 'motorista') {
+
+        if ($usuario->tipo === 'admin') {
+            // Admin pode visualizar a rota ativa mais recente do sistema.
+            $rota = Rota::with(['pedido.enderecoColeta', 'pedido.enderecoEntrega', 'veiculo', 'motorista'])
+                ->whereIn('status', ['planejada', 'iniciada'])
+                ->latest()
+                ->first();
+        } elseif ($usuario->tipo === 'motorista') {
             $rota = Rota::with(['pedido.enderecoColeta', 'pedido.enderecoEntrega', 'veiculo'])
                 ->where('motorista_id', $usuario->id)
                 ->whereIn('status', ['planejada', 'iniciada'])
                 ->latest()
                 ->first();
-        }
-
-        // Fallback: qualquer rota ativa no sistema (para clientes e demo)
-        if (!$rota) {
+        } else {
+            // Cliente vê a rota mais recente vinculada aos seus pedidos.
             $rota = Rota::with(['pedido.enderecoColeta', 'pedido.enderecoEntrega', 'veiculo', 'motorista'])
+                ->whereHas('pedido', fn ($q) => $q->where('cliente_id', $usuario->id))
                 ->whereIn('status', ['planejada', 'iniciada'])
-                ->latest()
-                ->first();
-        }
-
-        // Último recurso: rota mais recente independente de status
-        if (!$rota) {
-            $rota = Rota::with(['pedido.enderecoColeta', 'pedido.enderecoEntrega', 'veiculo', 'motorista'])
                 ->latest()
                 ->first();
         }
@@ -91,9 +89,12 @@ class TrackingController extends Controller
     /**
      * RF05 – Posição atual da rota (último registro de Rastreamento).
      */
-    public function posicaoAtual($rotaId)
+    public function posicaoAtual(int $rotaId)
     {
-        $registro = Rastreamento::where('rota_id', $rotaId)
+        $rota = Rota::findOrFail($rotaId);
+        Gate::authorize('view', $rota);
+
+        $registro = Rastreamento::where('rota_id', $rota->id)
             ->latest('created_at')
             ->first();
 
@@ -114,6 +115,7 @@ class TrackingController extends Controller
     public function avancarStatus(Request $request, int $rotaId)
     {
         $rota = Rota::with('pedido')->findOrFail($rotaId);
+        Gate::authorize('track', $rota);
 
         $proximo = match($rota->status) {
             'planejada' => 'iniciada',
@@ -147,15 +149,18 @@ class TrackingController extends Controller
      */
     public function salvarLocalizacao(Request $request, int $rotaId)
     {
-        $request->validate([
-            'latitude' => 'required|numeric',
-            'longitude' => 'required|numeric',
+        $rota = Rota::findOrFail($rotaId);
+        Gate::authorize('track', $rota);
+
+        $dados = $request->validate([
+            'latitude'  => ['required', 'numeric', 'between:-90,90'],
+            'longitude' => ['required', 'numeric', 'between:-180,180'],
         ]);
 
         $novoRastreamento = Rastreamento::create([
-            'rota_id' => $rotaId,
-            'latitude' => $request->latitude,
-            'longitude' => $request->longitude,
+            'rota_id'   => $rota->id,
+            'latitude'  => $dados['latitude'],
+            'longitude' => $dados['longitude'],
             'data_hora' => now(),
         ]);
 

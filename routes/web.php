@@ -14,7 +14,6 @@ use App\Http\Controllers\WaypointController;
 use App\Http\Controllers\MotoristaController;
 use App\Http\Controllers\RotaController;
 use App\Http\Controllers\PlanoAssinaturaController;
-use App\Models\Rastreamento;
 
 // ==============================================================================
 // ROTAS PÚBLICAS
@@ -59,16 +58,8 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/tracking/otimizar', [TrackingController::class, 'otimizar'])
         ->name('tracking.otimizar');
 
-    Route::get('/tracking/rotas/{id}/posicao-atual', function ($id) {
-        $ultimoRastro = Rastreamento::where('rota_id', $id)
-            ->orderBy('created_at', 'desc')
-            ->first();
-
-        return response()->json([
-            'latitude' => $ultimoRastro ? $ultimoRastro->latitude : null,
-            'longitude' => $ultimoRastro ? $ultimoRastro->longitude : null,
-        ]);
-    })->name('tracking.posicao-atual');
+    Route::get('/tracking/rotas/{rotaId}/posicao-atual', [TrackingController::class, 'posicaoAtual'])
+        ->name('tracking.posicao-atual');
 
     Route::post('/tracking/rotas/{rotaId}/localizacao', [TrackingController::class, 'salvarLocalizacao'])
         ->name('tracking.salvar-localizacao');
@@ -114,7 +105,9 @@ Route::middleware(['auth'])->group(function () {
     // =========================================================
     Route::get('/assinaturas', [PlanoAssinaturaController::class, 'index'])->name('assinaturas.index');
     Route::get('/minha-assinatura', [PlanoAssinaturaController::class, 'minhaAssinatura'])->name('assinaturas.minha');
-    Route::post('/assinaturas/assinar', [PlanoAssinaturaController::class, 'assinar'])->name('assinaturas.assinar');
+    Route::get('/assinaturas/checkout/{plano}', [PlanoAssinaturaController::class, 'checkout'])->name('assinaturas.checkout');
+    Route::post('/assinaturas/processar', [PlanoAssinaturaController::class, 'processar'])->name('assinaturas.processar')->middleware('throttle:10,1');
+    Route::get('/assinaturas/comprovante/{pagamento}', [PlanoAssinaturaController::class, 'comprovante'])->name('assinaturas.comprovante');
     Route::post('/assinaturas/cancelar', [PlanoAssinaturaController::class, 'cancelar'])->name('assinaturas.cancelar');
 
 
