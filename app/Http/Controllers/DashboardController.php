@@ -70,7 +70,7 @@ class DashboardController extends Controller
         $temposMins = collect($rotas)
             ->filter(fn($r) => $r['tempo_medio'] !== '—')
             ->map(fn($r) => (int) str_replace(' min', '', $r['tempo_medio']));
-        $tempoMedioGeral = $temposMins->count() > 0 ? $temposMins->avg() . ' min' : '—';
+        $tempoMedioGeral = $temposMins->count() > 0 ? round($temposMins->avg()) . ' min' : '—';
 
         return view('dashboard', [
             'resumo' => [

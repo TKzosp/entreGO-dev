@@ -11,7 +11,7 @@
         </div>
         <a href="{{ route('registration') }}"
            class="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition">
-            + Novo Pedido
+            Novo Pedido
         </a>
     </header>
 
