@@ -4,11 +4,13 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rule;
 use App\Models\Endereco;
 use App\Models\Pedido;
 use App\Models\Rota;
 use App\Models\Usuario;
 use App\Models\Veiculo;
+use App\Support\Ufs;
 
 class PedidoController extends Controller
 {
@@ -29,31 +31,46 @@ class PedidoController extends Controller
 
     public function store(Request $request)
     {
+        // Strip de mascara em CEPs e normalizacao de UF antes da validacao.
+        $request->merge([
+            'coleta_cep'     => preg_replace('/\D/', '', (string) $request->input('coleta_cep')),
+            'entrega_cep'    => preg_replace('/\D/', '', (string) $request->input('entrega_cep')),
+            'coleta_estado'  => strtoupper((string) $request->input('coleta_estado')),
+            'entrega_estado' => strtoupper((string) $request->input('entrega_estado')),
+        ]);
+
+        $ufs = Ufs::list();
+
         $dados = $request->validate([
             // Endereço de coleta
-            'coleta_cep'         => 'required|string|max:10',
-            'coleta_logradouro'  => 'required|string|max:100',
-            'coleta_numero'      => 'nullable|string|max:10',
-            'coleta_complemento' => 'nullable|string|max:50',
-            'coleta_bairro'      => 'required|string|max:50',
-            'coleta_cidade'      => 'required|string|max:50',
-            'coleta_estado'      => 'required|string|size:2',
+            'coleta_cep'         => ['required', 'string', 'regex:/^\d{8}$/'],
+            'coleta_logradouro'  => ['required', 'string', 'max:100'],
+            'coleta_numero'      => ['nullable', 'string', 'max:10'],
+            'coleta_complemento' => ['nullable', 'string', 'max:50'],
+            'coleta_bairro'      => ['required', 'string', 'max:50'],
+            'coleta_cidade'      => ['required', 'string', 'max:50'],
+            'coleta_estado'      => ['required', 'string', 'size:2', Rule::in($ufs)],
 
             // Endereço de entrega
-            'entrega_cep'         => 'required|string|max:10',
-            'entrega_logradouro'  => 'required|string|max:100',
-            'entrega_numero'      => 'nullable|string|max:10',
-            'entrega_complemento' => 'nullable|string|max:50',
-            'entrega_bairro'      => 'required|string|max:50',
-            'entrega_cidade'      => 'required|string|max:50',
-            'entrega_estado'      => 'required|string|size:2',
+            'entrega_cep'         => ['required', 'string', 'regex:/^\d{8}$/'],
+            'entrega_logradouro'  => ['required', 'string', 'max:100'],
+            'entrega_numero'      => ['nullable', 'string', 'max:10'],
+            'entrega_complemento' => ['nullable', 'string', 'max:50'],
+            'entrega_bairro'      => ['required', 'string', 'max:50'],
+            'entrega_cidade'      => ['required', 'string', 'max:50'],
+            'entrega_estado'      => ['required', 'string', 'size:2', Rule::in($ufs)],
 
             // Dados do pedido
-            'descricao'    => 'nullable|string|max:255',
-            'peso'         => 'nullable|numeric|min:0',
-            'volume'       => 'nullable|numeric|min:0',
-            'data_coleta'  => 'required|date|after_or_equal:today',
-            'observacoes'  => 'nullable|string',
+            'descricao'    => ['nullable', 'string', 'max:255'],
+            'peso'         => ['nullable', 'numeric', 'min:0'],
+            'volume'       => ['nullable', 'numeric', 'min:0'],
+            'data_coleta'  => ['required', 'date', 'after_or_equal:today'],
+            'observacoes'  => ['nullable', 'string'],
+        ], [
+            'coleta_cep.regex'     => 'CEP de coleta inválido. Use 8 dígitos.',
+            'entrega_cep.regex'    => 'CEP de entrega inválido. Use 8 dígitos.',
+            'coleta_estado.in'     => 'Estado de coleta inválido.',
+            'entrega_estado.in'    => 'Estado de entrega inválido.',
         ]);
 
         $usuarioId = Auth::id();
@@ -110,7 +127,7 @@ class PedidoController extends Controller
             $mensagem = 'Pedido cadastrado com sucesso! Nenhum motorista disponível no momento — você será notificado em breve.';
         }
 
-        return redirect()->route('registration')->with('success', $mensagem);
+        return redirect()->route('pedidos.index')->with('success', $mensagem);
     }
 
     private function selecionarMotorista(): ?Usuario

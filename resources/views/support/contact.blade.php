@@ -26,40 +26,32 @@
             <fieldset class="space-y-5">
                 <legend class="text-sm font-semibold text-slate-700 uppercase tracking-wider mb-2">Seus dados</legend>
 
+                <p class="text-xs text-slate-500">
+                    Usaremos as informações cadastradas no seu perfil. Para alterar, acesse
+                    <a href="{{ route('profile') }}" class="text-entrego-blue hover:underline">Meu perfil</a>.
+                </p>
+
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                     <div>
-                        <x-input-label for="nome" :value="__('Nome')" required />
-                        <x-text-input id="nome" name="nome" type="text"
-                                      :hasError="$errors->has('nome')"
-                                      :value="old('nome', $usuario->nome ?? '')"
-                                      placeholder="Seu nome completo"
-                                      required autocomplete="name" />
-                        <x-input-error :messages="$errors->get('nome')" />
+                        <x-input-label :value="__('Nome')" />
+                        <div class="block w-full rounded-md border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-700">
+                            {{ $usuario->nome }}
+                        </div>
                     </div>
 
                     <div>
-                        <x-input-label for="email" :value="__('E-mail')" required />
-                        <x-text-input id="email" name="email" type="email"
-                                      inputmode="email"
-                                      :hasError="$errors->has('email')"
-                                      :value="old('email', $usuario->email ?? '')"
-                                      placeholder="seu@email.com"
-                                      required autocomplete="email" />
-                        <x-input-error :messages="$errors->get('email')" />
+                        <x-input-label :value="__('E-mail')" />
+                        <div class="block w-full rounded-md border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-700">
+                            {{ $usuario->email }}
+                        </div>
                     </div>
                 </div>
 
                 <div>
-                    <x-input-label for="telefone" :value="__('Telefone')" />
-                    <x-text-input id="telefone" name="telefone" type="tel"
-                                  inputmode="tel"
-                                  data-mask="phone"
-                                  :hasError="$errors->has('telefone')"
-                                  :value="old('telefone', $usuario->telefone ?? '')"
-                                  placeholder="(11) 98765-4321"
-                                  maxlength="15"
-                                  autocomplete="tel" />
-                    <x-input-error :messages="$errors->get('telefone')" />
+                    <x-input-label :value="__('Telefone')" />
+                    <div class="block w-full rounded-md border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-700">
+                        {{ $usuario->telefone ?: '—' }}
+                    </div>
                 </div>
             </fieldset>
 

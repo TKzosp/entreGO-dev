@@ -3,9 +3,11 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Validation\Rule;
 use App\Models\Rota;
 use App\Models\Usuario;
-use App\Models\Veiculo;
 
 class RotaController extends Controller
 {
@@ -14,8 +16,17 @@ class RotaController extends Controller
         $status    = $request->input('status', 'todos');
         $motorista = $request->input('motorista_id', 'todos');
 
+        $usuario = Auth::user();
+
         $query = Rota::with(['pedido.enderecoColeta', 'pedido.enderecoEntrega', 'motorista', 'veiculo'])
             ->latest();
+
+        // Escopo por perfil: admin ve tudo, motorista as proprias, cliente as suas.
+        if ($usuario->tipo === 'motorista') {
+            $query->where('motorista_id', $usuario->id);
+        } elseif ($usuario->tipo !== 'admin') {
+            $query->whereHas('pedido', fn ($q) => $q->where('cliente_id', $usuario->id));
+        }
 
         if ($status !== 'todos') {
             $query->where('status', $status);
@@ -43,6 +54,8 @@ class RotaController extends Controller
             'rastreamentos',
         ])->findOrFail($id);
 
+        Gate::authorize('view', $rota);
+
         $motoristas = Usuario::where('tipo', 'motorista')->where('ativo', true)->orderBy('nome')->get();
 
         return view('rotas.show', compact('rota', 'motoristas'));
@@ -51,6 +64,7 @@ class RotaController extends Controller
     public function update(Request $request, int $id)
     {
         $rota = Rota::with('pedido')->findOrFail($id);
+        Gate::authorize('update', $rota);
 
         $acao = $request->input('acao');
 
@@ -70,13 +84,22 @@ class RotaController extends Controller
                 return back()->with('error', 'Só é possível reatribuir rotas com status planejada.');
             }
 
-            $request->validate([
-                'motorista_id' => 'required|exists:usuarios,id',
-                'veiculo_id'   => 'required|exists:veiculos,id',
+            $dados = $request->validate([
+                'motorista_id' => [
+                    'required',
+                    Rule::exists('usuarios', 'id')->where(fn ($q) => $q->where('tipo', 'motorista')->where('ativo', true)),
+                ],
+                'veiculo_id'   => [
+                    'required',
+                    Rule::exists('veiculos', 'id')->where(fn ($q) => $q->where('usuario_id', $request->input('motorista_id'))),
+                ],
+            ], [
+                'motorista_id.exists' => 'Motorista inválido ou inativo.',
+                'veiculo_id.exists'   => 'Veículo inválido ou não pertence ao motorista selecionado.',
             ]);
 
-            $rota->motorista_id = $request->motorista_id;
-            $rota->veiculo_id   = $request->veiculo_id;
+            $rota->motorista_id = $dados['motorista_id'];
+            $rota->veiculo_id   = $dados['veiculo_id'];
             $rota->save();
 
             return back()->with('success', 'Rota reatribuída com sucesso.');

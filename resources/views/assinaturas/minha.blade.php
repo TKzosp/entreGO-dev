@@ -105,6 +105,7 @@
                            class="inline-flex items-center justify-center min-h-[44px] rounded-lg border border-slate-300 px-4 py-2 text-slate-700 font-medium hover:bg-white focus:outline-none focus:ring-2 focus:ring-entrego-blue focus:ring-offset-2 transition-colors">
                             Trocar plano
                         </a>
+                        {{-- "Trocar plano" leva ao index, que então redireciona para checkout --}}
 
                         {{-- Botão que abre confirmação --}}
                         <button type="button" @click="confirmarCancel = true"
@@ -158,6 +159,43 @@
                 </a>
             </div>
         @endif
+
+        {{-- Histórico de pagamentos --}}
+        @if(isset($pagamentos) && $pagamentos->isNotEmpty())
+            <div class="mt-8">
+                <h2 class="text-lg font-semibold text-slate-900 mb-4">Histórico de pagamentos</h2>
+                <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                    <table class="min-w-full divide-y divide-slate-100 text-sm">
+                        <thead class="bg-slate-50">
+                            <tr>
+                                <th class="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide">Referência</th>
+                                <th class="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide">Plano</th>
+                                <th class="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide">Valor</th>
+                                <th class="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide">Data</th>
+                                <th class="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide">Comprovante</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                            @foreach($pagamentos as $pagamento)
+                                <tr class="hover:bg-slate-50 transition">
+                                    <td class="px-4 py-3 font-mono text-xs text-slate-400">{{ $pagamento->referencia_externa }}</td>
+                                    <td class="px-4 py-3 text-slate-700">{{ $pagamento->plano->nome }}</td>
+                                    <td class="px-4 py-3 text-slate-700">R$ {{ number_format($pagamento->valor, 2, ',', '.') }}</td>
+                                    <td class="px-4 py-3 text-slate-600 whitespace-nowrap">{{ $pagamento->created_at->format('d/m/Y H:i') }}</td>
+                                    <td class="px-4 py-3">
+                                        <a href="{{ route('assinaturas.comprovante', $pagamento->id) }}"
+                                           class="text-entrego-blue hover:underline text-xs font-medium">
+                                            Ver
+                                        </a>
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        @endif
+
     </div>
 </div>
 @endsection

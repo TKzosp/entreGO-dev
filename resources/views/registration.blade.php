@@ -171,10 +171,9 @@
             {{-- AÇÕES --}}
             <div class="flex items-center justify-end gap-4 px-4 sm:px-0 pb-6">
                 <a href="{{ route('dashboard') }}" class="text-sm text-gray-600 hover:text-gray-800">Cancelar</a>
-                <button type="submit"
-                    class="px-6 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition">
+                <x-primary-button loading-text="Cadastrando...">
                     Cadastrar Pedido
-                </button>
+                </x-primary-button>
             </div>
         </form>
 

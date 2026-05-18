@@ -16,7 +16,7 @@
         </div>
     @else
         {{-- Cards de resumo --}}
-        <section class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <section class="grid grid-cols-2 sm:grid-cols-3 gap-4">
             <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-4">
                 <span class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Total de motoristas</span>
                 <p class="mt-1 text-3xl font-bold text-slate-900">{{ $motoristas->count() }}</p>

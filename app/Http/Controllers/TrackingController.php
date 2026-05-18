@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use App\Models\Rota;
@@ -14,28 +15,25 @@ class TrackingController extends Controller
     public function index()
     {
         $usuario = Auth::user();
-
-        // Prioridade: rota ativa do próprio motorista logado
         $rota = null;
-        if ($usuario->tipo === 'motorista') {
+
+        if ($usuario->tipo === 'admin') {
+            // Admin pode visualizar a rota ativa mais recente do sistema.
+            $rota = Rota::with(['pedido.enderecoColeta', 'pedido.enderecoEntrega', 'veiculo', 'motorista'])
+                ->whereIn('status', ['planejada', 'iniciada'])
+                ->latest()
+                ->first();
+        } elseif ($usuario->tipo === 'motorista') {
             $rota = Rota::with(['pedido.enderecoColeta', 'pedido.enderecoEntrega', 'veiculo'])
                 ->where('motorista_id', $usuario->id)
                 ->whereIn('status', ['planejada', 'iniciada'])
                 ->latest()
                 ->first();
-        }
-
-        // Fallback: qualquer rota ativa no sistema (para clientes e demo)
-        if (!$rota) {
+        } else {
+            // Cliente vê a rota mais recente vinculada aos seus pedidos.
             $rota = Rota::with(['pedido.enderecoColeta', 'pedido.enderecoEntrega', 'veiculo', 'motorista'])
+                ->whereHas('pedido', fn ($q) => $q->where('cliente_id', $usuario->id))
                 ->whereIn('status', ['planejada', 'iniciada'])
-                ->latest()
-                ->first();
-        }
-
-        // Último recurso: rota mais recente independente de status
-        if (!$rota) {
-            $rota = Rota::with(['pedido.enderecoColeta', 'pedido.enderecoEntrega', 'veiculo', 'motorista'])
                 ->latest()
                 ->first();
         }
@@ -56,25 +54,25 @@ class TrackingController extends Controller
      */
     public function otimizar(Request $request)
     {
-        $origem = $request->input('origem');
-        $destinos = $request->input('destinos', []);
+        $dados = $request->validate([
+            'origem'      => ['required', 'string', 'max:255'],
+            'destinos'    => ['required', 'array', 'min:1', 'max:25'],
+            'destinos.*'  => ['required', 'string', 'max:255'],
+        ], [
+            'destinos.max' => 'Maximo de 25 destinos por rota.',
+        ]);
 
-        if (!$origem || empty($destinos)) {
-            return response()->json([
-                'message' => 'Origem e pelo menos um destino são obrigatórios.',
-            ], 422);
-        }
-
-        $apiKey = env('GOOGLE_MAPS_API_KEY');
+        $apiKey = config('services.google.maps_key');
 
         if (!$apiKey) {
-            Log::error('GOOGLE_MAPS_API_KEY não configurada no .env.');
+            Log::error('services.google.maps_key não configurada.');
             return response()->json([
-                'message' => 'GOOGLE_MAPS_API_KEY não configurada no .env.',
-            ], 500);
+                'message' => 'Servico de rotas indisponivel no momento.',
+            ], 503);
         }
 
-        // Último destino é o destino final
+        $origem = $dados['origem'];
+        $destinos = $dados['destinos'];
         $destinoFinal = end($destinos);
 
         $url = "https://maps.googleapis.com/maps/api/directions/json"
@@ -85,15 +83,37 @@ class TrackingController extends Controller
 
         $response = Http::get($url)->json();
 
-        return response()->json($response);
+        // Resposta enxuta — nao repassamos status/error_message do Google nem
+        // chaves internas. Repassa apenas o que a UI consome.
+        if (($response['status'] ?? null) !== 'OK' || empty($response['routes'][0] ?? null)) {
+            Log::warning('Directions API sem rotas', ['status' => $response['status'] ?? null]);
+            return response()->json(['message' => 'Nenhuma rota encontrada.'], 422);
+        }
+
+        $rotaPrincipal = $response['routes'][0];
+
+        return response()->json([
+            'polyline'          => $rotaPrincipal['overview_polyline']['points'] ?? null,
+            'bounds'            => $rotaPrincipal['bounds'] ?? null,
+            'waypoint_order'    => $rotaPrincipal['waypoint_order'] ?? [],
+            'legs'              => collect($rotaPrincipal['legs'] ?? [])->map(fn ($leg) => [
+                'distance'      => $leg['distance'] ?? null,
+                'duration'      => $leg['duration'] ?? null,
+                'start_address' => $leg['start_address'] ?? null,
+                'end_address'   => $leg['end_address'] ?? null,
+            ])->all(),
+        ]);
     }
 
     /**
      * RF05 – Posição atual da rota (último registro de Rastreamento).
      */
-    public function posicaoAtual($rotaId)
+    public function posicaoAtual(int $rotaId)
     {
-        $registro = Rastreamento::where('rota_id', $rotaId)
+        $rota = Rota::findOrFail($rotaId);
+        Gate::authorize('view', $rota);
+
+        $registro = Rastreamento::where('rota_id', $rota->id)
             ->latest('created_at')
             ->first();
 
@@ -114,6 +134,7 @@ class TrackingController extends Controller
     public function avancarStatus(Request $request, int $rotaId)
     {
         $rota = Rota::with('pedido')->findOrFail($rotaId);
+        Gate::authorize('track', $rota);
 
         $proximo = match($rota->status) {
             'planejada' => 'iniciada',
@@ -147,15 +168,18 @@ class TrackingController extends Controller
      */
     public function salvarLocalizacao(Request $request, int $rotaId)
     {
-        $request->validate([
-            'latitude' => 'required|numeric',
-            'longitude' => 'required|numeric',
+        $rota = Rota::findOrFail($rotaId);
+        Gate::authorize('track', $rota);
+
+        $dados = $request->validate([
+            'latitude'  => ['required', 'numeric', 'between:-90,90'],
+            'longitude' => ['required', 'numeric', 'between:-180,180'],
         ]);
 
         $novoRastreamento = Rastreamento::create([
-            'rota_id' => $rotaId,
-            'latitude' => $request->latitude,
-            'longitude' => $request->longitude,
+            'rota_id'   => $rota->id,
+            'latitude'  => $dados['latitude'],
+            'longitude' => $dados['longitude'],
             'data_hora' => now(),
         ]);
 

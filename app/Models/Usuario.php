@@ -23,6 +23,7 @@ class Usuario extends Authenticatable
         'cpf_cnpj',
         'telefone',
         'ativo',
+        'endereco_faturamento_id',
     ];
 
     // Caso queira ocultar a senha ao retornar JSON
@@ -54,6 +55,11 @@ class Usuario extends Authenticatable
     public function enderecos()
     {
         return $this->hasMany(Endereco::class, 'usuario_id');
+    }
+
+    public function enderecoFaturamento()
+    {
+        return $this->belongsTo(Endereco::class, 'endereco_faturamento_id');
     }
 
     public function pedidos()

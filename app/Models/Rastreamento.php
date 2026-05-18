@@ -9,12 +9,14 @@ class Rastreamento extends Model
 {
     use HasFactory;
 
-    protected $table = 'rastreamento';
-
     protected $fillable = [
         'rota_id',
         'latitude',
         'longitude',
         'data_hora',
+    ];
+
+    protected $casts = [
+        'data_hora' => 'datetime',
     ];
 }

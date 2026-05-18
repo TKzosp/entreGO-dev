@@ -45,26 +45,25 @@ class SupportController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
-            'nome' => ['required', 'string', 'max:100'],
-            'email' => ['required', 'email', 'max:100'],
-            'telefone' => ['nullable', 'string', 'max:20'],
-            'assunto' => ['required', 'string', 'max:150'],
-            'categoria' => ['required', 'in:assistencia_tecnica,comercial'],
+        $dados = $request->validate([
+            'assunto'    => ['required', 'string', 'max:150'],
+            'categoria'  => ['required', 'in:assistencia_tecnica,comercial'],
             'prioridade' => ['required', 'in:baixa,media,alta'],
-            'mensagem' => ['required', 'string', 'min:10'],
+            'mensagem'   => ['required', 'string', 'min:10'],
         ]);
 
+        $usuario = Auth::user();
+
         Chamado::create([
-            'usuario_id' => Auth::id(),
-            'nome' => $request->nome,
-            'email' => $request->email,
-            'telefone' => $request->telefone,
-            'assunto' => $request->assunto,
-            'categoria' => $request->categoria,
-            'prioridade' => $request->prioridade,
-            'mensagem' => $request->mensagem,
-            'status' => 'aberto',
+            'usuario_id' => $usuario->id,
+            'nome'       => $usuario->nome,
+            'email'      => $usuario->email,
+            'telefone'   => $usuario->telefone,
+            'assunto'    => $dados['assunto'],
+            'categoria'  => $dados['categoria'],
+            'prioridade' => $dados['prioridade'],
+            'mensagem'   => $dados['mensagem'],
+            'status'     => 'aberto',
         ]);
 
         return redirect()
