@@ -183,12 +183,8 @@ class PlanoAssinaturaController extends Controller
             }
         });
 
-        if (session()->pull('pagamento_aprovado_id')) {
-            $pagamentoId = Pagamento::where('usuario_id', Auth::id())
-                ->where('status', 'aprovado')
-                ->latest()
-                ->value('id');
-
+        $pagamentoId = session()->pull('pagamento_aprovado_id');
+        if ($pagamentoId) {
             return redirect()->route('assinaturas.comprovante', $pagamentoId);
         }
 
