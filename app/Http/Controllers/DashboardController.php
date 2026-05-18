@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Auth;
 use App\Models\Pedido;
 use App\Models\Rota;
 
@@ -21,6 +23,7 @@ class DashboardController extends Controller
         $todasRotas = Rota::with(['veiculo', 'pedido', 'motorista'])
             ->whereHas('veiculo', fn($q) => $q->whereIn('tipo', $tiposVeiculo))
             ->whereHas('pedido', fn($q) => $q->where('data_coleta', '>=', $dataInicio))
+            ->tap(fn ($q) => $this->escopoRotas($q))
             ->get();
 
         // Agrupa por motorista para montar a tabela de desempenho
@@ -61,6 +64,7 @@ class DashboardController extends Controller
         // KPIs
         $pedidosNoPeriodo = Pedido::where('data_coleta', '>=', $dataInicio)
             ->whereHas('rota', fn($q) => $q->whereHas('veiculo', fn($v) => $v->whereIn('tipo', $tiposVeiculo)))
+            ->tap(fn ($q) => $this->escopoPedidos($q))
             ->get();
 
         $totalColetas    = $pedidosNoPeriodo->whereIn('status', ['coletado', 'transito', 'entregue'])->count();
@@ -94,6 +98,60 @@ class DashboardController extends Controller
         ]);
     }
 
+    /**
+     * Aplica filtro por dono a uma query do model Rota.
+     * - admin: sem filtro
+     * - motorista: rotas onde motorista_id = self
+     * - cliente: rotas cujo pedido.cliente_id = self
+     */
+    private function escopoRotas(Builder $query): Builder
+    {
+        $user = Auth::user();
+        if (!$user || $user->tipo === 'admin') {
+            return $query;
+        }
+
+        if ($user->tipo === 'motorista') {
+            return $query->where('motorista_id', $user->id);
+        }
+
+        return $query->whereHas('pedido', fn ($q) => $q->where('cliente_id', $user->id));
+    }
+
+    /**
+     * Variante para queries Rota com JOIN explicito em pedidos.
+     */
+    private function escopoRotasJoin(Builder $query): Builder
+    {
+        $user = Auth::user();
+        if (!$user || $user->tipo === 'admin') {
+            return $query;
+        }
+
+        if ($user->tipo === 'motorista') {
+            return $query->where('rotas.motorista_id', $user->id);
+        }
+
+        return $query->where('pedidos.cliente_id', $user->id);
+    }
+
+    /**
+     * Aplica filtro por dono a uma query do model Pedido.
+     */
+    private function escopoPedidos(Builder $query): Builder
+    {
+        $user = Auth::user();
+        if (!$user || $user->tipo === 'admin') {
+            return $query;
+        }
+
+        if ($user->tipo === 'motorista') {
+            return $query->whereHas('rota', fn ($q) => $q->where('motorista_id', $user->id));
+        }
+
+        return $query->where('cliente_id', $user->id);
+    }
+
     private function dataInicio(string $periodo): Carbon
     {
         return match ($periodo) {
@@ -122,6 +180,7 @@ class DashboardController extends Controller
             ->whereHas('veiculo', fn($q) => $q->whereIn('tipo', $tiposVeiculo))
             ->whereHas('pedido', fn($q) => $q->where('status', 'entregue')->where('data_coleta', '>=', $dataInicio))
             ->whereNotNull('data_fim')
+            ->tap(fn ($q) => $this->escopoRotas($q))
             ->get()
             ->map(fn($r) => [
                 'data'  => Carbon::parse($r->data_fim)->format('Y-m-d'),
@@ -165,6 +224,7 @@ class DashboardController extends Controller
             ->join('pedidos', 'rotas.pedido_id', '=', 'pedidos.id')
             ->whereIn('veiculos.tipo', $tiposVeiculo)
             ->where('pedidos.data_coleta', '>=', $dataInicio)
+            ->tap(fn ($q) => $this->escopoRotasJoin($q))
             ->groupBy('veiculos.tipo')
             ->pluck('total', 'veiculos.tipo');
 
@@ -193,6 +253,7 @@ class DashboardController extends Controller
         $counts = Pedido::selectRaw('status, COUNT(*) as total')
             ->where('data_coleta', '>=', $dataInicio)
             ->whereHas('rota', fn($q) => $q->whereHas('veiculo', fn($v) => $v->whereIn('tipo', $tiposVeiculo)))
+            ->tap(fn ($q) => $this->escopoPedidos($q))
             ->groupBy('status')
             ->pluck('total', 'status');
 
