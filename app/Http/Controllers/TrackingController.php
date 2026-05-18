@@ -54,14 +54,13 @@ class TrackingController extends Controller
      */
     public function otimizar(Request $request)
     {
-        $origem = $request->input('origem');
-        $destinos = $request->input('destinos', []);
-
-        if (!$origem || empty($destinos)) {
-            return response()->json([
-                'message' => 'Origem e pelo menos um destino são obrigatórios.',
-            ], 422);
-        }
+        $dados = $request->validate([
+            'origem'      => ['required', 'string', 'max:255'],
+            'destinos'    => ['required', 'array', 'min:1', 'max:25'],
+            'destinos.*'  => ['required', 'string', 'max:255'],
+        ], [
+            'destinos.max' => 'Maximo de 25 destinos por rota.',
+        ]);
 
         $apiKey = config('services.google.maps_key');
 
@@ -72,7 +71,8 @@ class TrackingController extends Controller
             ], 503);
         }
 
-        // Último destino é o destino final
+        $origem = $dados['origem'];
+        $destinos = $dados['destinos'];
         $destinoFinal = end($destinos);
 
         $url = "https://maps.googleapis.com/maps/api/directions/json"
@@ -83,7 +83,26 @@ class TrackingController extends Controller
 
         $response = Http::get($url)->json();
 
-        return response()->json($response);
+        // Resposta enxuta — nao repassamos status/error_message do Google nem
+        // chaves internas. Repassa apenas o que a UI consome.
+        if (($response['status'] ?? null) !== 'OK' || empty($response['routes'][0] ?? null)) {
+            Log::warning('Directions API sem rotas', ['status' => $response['status'] ?? null]);
+            return response()->json(['message' => 'Nenhuma rota encontrada.'], 422);
+        }
+
+        $rotaPrincipal = $response['routes'][0];
+
+        return response()->json([
+            'polyline'          => $rotaPrincipal['overview_polyline']['points'] ?? null,
+            'bounds'            => $rotaPrincipal['bounds'] ?? null,
+            'waypoint_order'    => $rotaPrincipal['waypoint_order'] ?? [],
+            'legs'              => collect($rotaPrincipal['legs'] ?? [])->map(fn ($leg) => [
+                'distance'      => $leg['distance'] ?? null,
+                'duration'      => $leg['duration'] ?? null,
+                'start_address' => $leg['start_address'] ?? null,
+                'end_address'   => $leg['end_address'] ?? null,
+            ])->all(),
+        ]);
     }
 
     /**
