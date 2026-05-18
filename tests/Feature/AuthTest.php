@@ -116,16 +116,40 @@ class AuthTest extends TestCase
     // CADASTRO
     // ──────────────────────────────────────────────
 
-    public function test_register_creates_user_and_redirects_to_login(): void
+    public function test_register_creates_user_and_logs_in(): void
     {
         $response = $this->post('/register', [
             'nome'               => 'Novo Usuário',
             'email'              => 'novo@entrego.com',
-            'senha'              => 'senha123',
-            'senha_confirmation' => 'senha123',
+            'senha'              => 'Senha123',
+            'senha_confirmation' => 'Senha123',
         ]);
 
-        $response->assertRedirect('/login');
-        $this->assertDatabaseHas('usuarios', ['email' => 'novo@entrego.com']);
+        $response->assertRedirect('/');
+        $this->assertAuthenticated();
+        $this->assertDatabaseHas('usuarios', [
+            'email' => 'novo@entrego.com',
+            'tipo'  => 'cliente',
+        ]);
+    }
+
+    public function test_register_forces_tipo_cliente_even_when_payload_tries_admin(): void
+    {
+        $this->post('/register', [
+            'nome'               => 'Tentativa Escalada',
+            'email'              => 'atacante@entrego.com',
+            'senha'              => 'Senha123',
+            'senha_confirmation' => 'Senha123',
+            'tipo'               => 'admin',
+        ]);
+
+        $this->assertDatabaseHas('usuarios', [
+            'email' => 'atacante@entrego.com',
+            'tipo'  => 'cliente',
+        ]);
+        $this->assertDatabaseMissing('usuarios', [
+            'email' => 'atacante@entrego.com',
+            'tipo'  => 'admin',
+        ]);
     }
 }

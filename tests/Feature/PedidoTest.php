@@ -45,7 +45,7 @@ class PedidoTest extends TestCase
 
         $this->actingAs($usuario)
              ->post('/pedidos', $this->dadosValidos())
-             ->assertRedirect('/registration')
+             ->assertRedirect('/pedidos')
              ->assertSessionHas('success');
 
         $this->assertDatabaseHas('pedidos', [
