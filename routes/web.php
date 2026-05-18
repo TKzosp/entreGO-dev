@@ -56,6 +56,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/tracking', [TrackingController::class, 'index'])->name('tracking');
 
     Route::post('/tracking/otimizar', [TrackingController::class, 'otimizar'])
+        ->middleware('throttle:30,1')
         ->name('tracking.otimizar');
 
     Route::get('/tracking/rotas/{rotaId}/posicao-atual', [TrackingController::class, 'posicaoAtual'])

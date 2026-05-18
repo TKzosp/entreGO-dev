@@ -63,13 +63,13 @@ class TrackingController extends Controller
             ], 422);
         }
 
-        $apiKey = env('GOOGLE_MAPS_API_KEY');
+        $apiKey = config('services.google.maps_key');
 
         if (!$apiKey) {
-            Log::error('GOOGLE_MAPS_API_KEY não configurada no .env.');
+            Log::error('services.google.maps_key não configurada.');
             return response()->json([
-                'message' => 'GOOGLE_MAPS_API_KEY não configurada no .env.',
-            ], 500);
+                'message' => 'Servico de rotas indisponivel no momento.',
+            ], 503);
         }
 
         // Último destino é o destino final
