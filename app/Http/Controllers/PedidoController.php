@@ -127,7 +127,7 @@ class PedidoController extends Controller
             $mensagem = 'Pedido cadastrado com sucesso! Nenhum motorista disponível no momento — você será notificado em breve.';
         }
 
-        return redirect()->route('registration')->with('success', $mensagem);
+        return redirect()->route('pedidos.index')->with('success', $mensagem);
     }
 
     private function selecionarMotorista(): ?Usuario
