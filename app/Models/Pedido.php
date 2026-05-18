@@ -15,7 +15,6 @@ class Pedido extends Model
         'descricao',
         'peso',
         'volume',
-        'valor',
         'data_coleta',
         'data_entrega_estimada',
         'status',
