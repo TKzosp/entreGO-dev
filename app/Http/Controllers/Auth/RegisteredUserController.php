@@ -37,7 +37,8 @@ class RegisteredUserController extends Controller
         ]);
 
         Auth::login($usuario);
+        $request->session()->regenerate();
 
-        return redirect('/login')->with('success', 'Cadastro realizado com sucesso! Faça o login.');
+        return redirect()->route('dashboard')->with('success', 'Cadastro realizado com sucesso! Bem-vindo(a).');
     }
 }
